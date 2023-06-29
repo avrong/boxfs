@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.ByteBuffer
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class BoxFsTest {
@@ -29,7 +30,7 @@ class BoxFsTest {
 
     @Test
     fun fileTableTest() {
-        val fileTable = FileTable(listOf(
+        val fileTable = FileTable(mutableListOf(
             FileEntry("/hello", 0, 1),
             FileEntry("/world", 2, 3)
         ))
@@ -39,6 +40,19 @@ class BoxFsTest {
         val parsedFileTable = FileTable.fromByteBuffer(byteBuffer)
 
         assertEquals(fileTable, parsedFileTable)
+    }
+
+    @Test
+    fun writeAndOpenFileTest() {
+        val file = tempDir!!.toPath().resolve("boxfs.box")
+        val boxFs = BoxFs.initialize(file, 4)
+        val byteArray = byteArrayOf(1, 2, 3, 4)
+        boxFs.write("hello.txt", byteArray)
+        val openedFile = boxFs.open("hello.txt")!!
+
+        assertEquals("hello.txt", openedFile.path)
+        assertEquals(false, openedFile.isDirectory)
+        assertContentEquals(byteArray, openedFile.getContent())
     }
 
     /*

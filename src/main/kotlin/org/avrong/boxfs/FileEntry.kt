@@ -3,15 +3,15 @@ package org.avrong.boxfs
 import java.nio.ByteBuffer
 
 
-data class FileEntry(val path: String, val offset: Int, val size: Int) {
+data class FileEntry(var path: String, val offset: Long, val size: Int) {
     fun toBytes(): ByteArray {
         val pathBytes = path.toByteArray()
         val pathSize = pathBytes.size
-        val byteSize = Int.SIZE_BYTES + pathSize + Int.SIZE_BYTES + Int.SIZE_BYTES
+        val byteSize = Int.SIZE_BYTES + pathSize + Long.SIZE_BYTES + Int.SIZE_BYTES
         val byteBuffer = ByteBuffer.allocate(byteSize)
         byteBuffer.putInt(pathSize)
         byteBuffer.put(pathBytes)
-        byteBuffer.putInt(offset)
+        byteBuffer.putLong(offset)
         byteBuffer.putInt(size)
 
         return byteBuffer.toByteArray()
@@ -26,7 +26,7 @@ data class FileEntry(val path: String, val offset: Int, val size: Int) {
             byteBuffer.get(buffer)
             val path = String(buffer)
 
-            val offset = byteBuffer.getInt()
+            val offset = byteBuffer.getLong()
             val size = byteBuffer.getInt()
 
             return FileEntry(path, offset, size)

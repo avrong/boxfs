@@ -2,7 +2,20 @@ package org.avrong.boxfs
 
 import java.nio.ByteBuffer
 
-data class FileTable(val files: List<FileEntry>) {
+data class FileTable(val files: MutableList<FileEntry>) {
+    fun addEntry(path: String, offset: Long, size: Int) {
+        // TODO: Rewrite file is there is one already
+        files.add(FileEntry(path, offset, size))
+    }
+
+    fun findEntryByPath(path: String): FileEntry? {
+        return files.find { it.path == path }
+    }
+
+    fun changeEntryPath(pathFrom: String, pathTo: String) {
+        files.forEach { if (it.path == pathFrom) it.path = pathTo }
+    }
+
     fun toBytes(): ByteArray {
         val bytes = mutableListOf<Byte>()
 
