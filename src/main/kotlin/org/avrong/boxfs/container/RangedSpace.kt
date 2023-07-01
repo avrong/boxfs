@@ -34,6 +34,14 @@ class RangedSpace(private val space: Space, private val rangeOffset: Long, val r
         space.setStringAt(globalOffset, value)
     }
 
+    fun getBytes(offset: Int, size: Int): ByteArray = withRangeCheck(offset, size) { globalOffset ->
+        space.getBytesAt(globalOffset, size)
+    }
+
+    fun setBytes(offset: Int, value: ByteArray) = withRangeCheck(offset, value.size) { globalOffset ->
+        space.setBytesAt(globalOffset, value)
+    }
+
     fun exceedsRange(offset: Int, size: Int): Boolean {
         val globalOffset = rangeOffset + offset
 

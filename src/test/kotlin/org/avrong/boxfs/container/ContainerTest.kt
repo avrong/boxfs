@@ -1,5 +1,7 @@
 package org.avrong.boxfs.container
 
+import org.avrong.boxfs.block.DirectoryBlock
+import org.avrong.boxfs.block.FileBlock
 import org.avrong.boxfs.block.SymbolBlock
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -9,6 +11,7 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createFile
 import kotlin.io.path.fileSize
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class ContainerTest {
@@ -55,5 +58,29 @@ class ContainerTest {
 
         assertTrue(symbolBlock.checkStringFits("abc"))
         assertFalse(symbolBlock.checkStringFits("hello1"))
+    }
+
+    @Test
+    fun testDirectoryBlock() {
+        val entryList = listOf(DirectoryBlock.DirectoryBlockEntry(12, 24))
+        val blockDataSize = DirectoryBlock.getInitialBlockDataSize(entryList)
+        val directoryBlock = container.createDirectoryBlock(blockDataSize)
+        directoryBlock.appendEntries(entryList)
+
+        assertEquals(blockDataSize, directoryBlock.dataSize)
+        assertEquals(entryList.size, directoryBlock.entryCount)
+        assertEquals(entryList, directoryBlock.entries)
+    }
+
+    @Test
+    fun testFileBlock() {
+        val content = "hello".toByteArray()
+        val blockDataSize = FileBlock.getInitialBlockDataSize(content)
+        val fileBlock = container.createFileBlock(blockDataSize)
+        fileBlock.appendContent(content)
+
+        assertEquals(blockDataSize, fileBlock.dataSize)
+        assertEquals(content.size, fileBlock.contentSize)
+        assertContentEquals(content, fileBlock.content)
     }
 }

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createFile
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class SpaceTest {
@@ -50,6 +51,13 @@ class SpaceTest {
         val str = "Hello World"
         space.setStringAt(0, str)
         assertEquals(str, space.getStringAt(0, str.length))
+    }
+
+    @Test
+    fun testBytes() {
+        val bytes = listOf<Byte>(1, 2, 3, 4, 5, 127).toByteArray()
+        space.setBytesAt(0, bytes)
+        assertContentEquals(bytes, space.getBytesAt(0, bytes.size))
     }
 
     @Test

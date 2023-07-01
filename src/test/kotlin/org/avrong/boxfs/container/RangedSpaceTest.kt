@@ -34,6 +34,7 @@ class RangedSpaceTest {
         assertThrows<IndexOutOfBoundsException> { rangedSpace.setInt(9, 12) }
         assertThrows<IndexOutOfBoundsException> { rangedSpace.setLong(5, 42) }
         assertThrows<IndexOutOfBoundsException> { rangedSpace.setString(1, "hello") }
+        assertThrows<IndexOutOfBoundsException> { rangedSpace.setBytes(5, ByteArray(6)) }
 
         assertTrue(rangedSpace.exceedsRange(9, 4))
         assertFalse(rangedSpace.exceedsRange(5, 1))

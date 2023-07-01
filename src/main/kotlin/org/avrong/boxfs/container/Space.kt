@@ -56,6 +56,16 @@ class Space private constructor (private val randomAccessFile: RandomAccessFile)
         randomAccessFile.write(value.toByteArray())
     }
 
+    fun getBytesAt(offset: Long, size: Int): ByteArray = withPositionChange(offset, size) {
+        val byteArray = ByteArray(size)
+        randomAccessFile.read(byteArray)
+        byteArray
+    }
+
+    fun setBytesAt(offset: Long, value: ByteArray) = withPositionChange(offset, value.size) {
+        randomAccessFile.write(value)
+    }
+
     override fun close() {
         randomAccessFile.close()
     }
