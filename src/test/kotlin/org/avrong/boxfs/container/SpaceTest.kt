@@ -1,6 +1,5 @@
-package org.avrong.boxfs
+package org.avrong.boxfs.container
 
-import org.avrong.boxfs.container.Space
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -63,7 +62,6 @@ class SpaceTest {
 
         val long = 24L
         val longOffset = strOffset + str.length
-
 
         space.setIntAt(0, integer)
         space.setStringAt(strOffset, str)

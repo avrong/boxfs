@@ -1,7 +1,5 @@
-package org.avrong.boxfs
+package org.avrong.boxfs.container
 
-import org.avrong.boxfs.container.RangedSpace
-import org.avrong.boxfs.container.Space
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

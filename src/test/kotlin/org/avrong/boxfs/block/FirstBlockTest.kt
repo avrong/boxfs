@@ -1,7 +1,5 @@
-package org.avrong.boxfs
+package org.avrong.boxfs.block
 
-import org.avrong.boxfs.block.BlockType
-import org.avrong.boxfs.block.FirstBlock
 import org.avrong.boxfs.container.Container
 import org.avrong.boxfs.container.Space
 import org.junit.jupiter.api.Test
@@ -11,7 +9,7 @@ import java.nio.file.Path
 import kotlin.io.path.createFile
 import kotlin.test.assertEquals
 
-class SymbolBlockTest {
+class FirstBlockTest {
     @field:TempDir
     lateinit var tempDir: File
 
