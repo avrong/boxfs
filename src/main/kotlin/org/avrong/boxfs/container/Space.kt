@@ -16,7 +16,6 @@ class Space private constructor (private val randomAccessFile: RandomAccessFile)
     }
 
     fun setByteAt(offset: Long, byte: Byte) = withPositionChange(offset, Byte.SIZE_BYTES) {
-        position += Byte.SIZE_BYTES
         randomAccessFile.writeByte(byte.toInt())
     }
 
