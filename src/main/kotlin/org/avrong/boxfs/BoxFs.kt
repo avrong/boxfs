@@ -14,15 +14,14 @@ class BoxFs private constructor(
             path.createFile()
 
             val space = Space.fromPath(path)
-            val container = Container(space)
-            container.createFirstBlock()
+            val container = Container.fromSpace(space)
 
             return BoxFs(path, container)
         }
 
         fun open(path: Path): BoxFs {
             val space = Space.fromPath(path)
-            val container = Container(space)
+            val container = Container.fromSpace(space)
             return BoxFs(path, container)
         }
     }

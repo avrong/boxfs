@@ -2,24 +2,38 @@ package org.avrong.boxfs.container
 
 import org.avrong.boxfs.block.*
 
-class Container(private val space: Space) : AutoCloseable {
+class Container private constructor (private val space: Space) : AutoCloseable {
     val firstBlock: FirstBlock
         get() {
-            val rangedSpace = RangedSpace(space, 0, FirstBlock.BLOCK_SIZE)
+            val rangedSpace = rangedSpaceForBlock(0)
             return FirstBlock(rangedSpace)
         }
 
+    fun initFirstBlock() {
+        val rangedSpace = RangedSpace(space, 0, Block.BLOCK_HEADER_SIZE + FirstBlock.BLOCK_DATA_SIZE)
+        FirstBlock(rangedSpace).init()
+    }
+
     fun getBlockType(offset: Long): BlockType {
-        val typeByte = space.getByteAt(offset + Block.TYPE_OFFSET)
+        val typeByte = space.getByteAt(offset + Block.BLOCK_TYPE_OFFSET)
         return BlockType.getBlockType(typeByte)
     }
 
     fun getBlockSize(offset: Long): Int {
-        return space.getIntAt(offset + Block.SIZE_OFFSET)
+        return space.getIntAt(offset + Block.BLOCK_SIZE_OFFSET)
     }
 
     fun getDirectoryBlock(offset: Long): DirectoryBlock {
         val rangedSpace = rangedSpaceForBlock(offset)
+        return DirectoryBlock(rangedSpace)
+    }
+
+    fun createDirectoryBlock(blockDataSize: Int): DirectoryBlock {
+        val rangedSpace = allocateRangedSpaceForBlock(blockDataSize)
+
+        val directoryBlock = DirectoryBlock(rangedSpace)
+        directoryBlock.init()
+
         return DirectoryBlock(rangedSpace)
     }
 
@@ -28,13 +42,27 @@ class Container(private val space: Space) : AutoCloseable {
         return FileBlock(rangedSpace)
     }
 
+    fun createFileBlock(blockDataSize: Int): FileBlock {
+        val rangedSpace = allocateRangedSpaceForBlock(blockDataSize)
+
+        val fileBlock = FileBlock(rangedSpace)
+        fileBlock.init()
+
+        return fileBlock
+    }
+
     fun getSymbolBlock(offset: Long): SymbolBlock {
         val rangedSpace = rangedSpaceForBlock(offset)
         return SymbolBlock(rangedSpace)
     }
 
-    fun createFirstBlock() {
-        firstBlock.writeHeader()
+    fun createSymbolBlock(blockDataSize: Int): SymbolBlock {
+        val rangedSpace = allocateRangedSpaceForBlock(blockDataSize)
+
+        val symbolBlock = SymbolBlock(rangedSpace)
+        symbolBlock.init()
+
+        return symbolBlock
     }
 
     override fun close() {
@@ -42,7 +70,24 @@ class Container(private val space: Space) : AutoCloseable {
     }
 
     private fun rangedSpaceForBlock(globalOffset: Long): RangedSpace {
-        val blockSize = Block.getSize(space, globalOffset)
-        return RangedSpace(space, globalOffset, blockSize)
+        val blockDataSize = Block.getDataSize(space, globalOffset)
+        return space.rangedSpace(globalOffset, Block.BLOCK_HEADER_SIZE + blockDataSize)
+    }
+
+    private fun allocateRangedSpaceForBlock(blockDataSize: Int): RangedSpace {
+        val sizeWithMetadata = Block.BLOCK_HEADER_SIZE + blockDataSize
+        return space.rangedSpaceFromEnd(sizeWithMetadata)
+    }
+
+    companion object {
+        fun fromSpace(space: Space): Container {
+            val container = Container(space)
+
+            if (space.isEmpty) {
+                container.initFirstBlock()
+            }
+
+            return Container(space)
+        }
     }
 }

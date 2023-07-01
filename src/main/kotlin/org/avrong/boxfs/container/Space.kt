@@ -6,9 +6,19 @@ import kotlin.io.path.exists
 
 class Space private constructor (private val randomAccessFile: RandomAccessFile) : AutoCloseable {
     private var position: Long = 0
+    private var length: Long = randomAccessFile.length()
+
+    val isEmpty: Boolean = randomAccessFile.length() == 0L
 
     init {
         position = randomAccessFile.filePointer
+    }
+
+    fun rangedSpace(globalOffset: Long, size: Int): RangedSpace = RangedSpace(this, globalOffset, size)
+    fun rangedSpaceFromEnd(size: Int): RangedSpace {
+        length += size
+        randomAccessFile.setLength(length)
+        return RangedSpace(this, length, size)
     }
 
     fun getByteAt(offset: Long): Byte = withPositionChange(offset, Byte.SIZE_BYTES) {
@@ -51,7 +61,6 @@ class Space private constructor (private val randomAccessFile: RandomAccessFile)
     }
 
     private fun <T> withPositionChange(offset: Long, change: Int, action: () -> T): T {
-        // TODO: Maybe check for range here?
         if (position != offset) {
             randomAccessFile.seek(offset)
             position = offset
@@ -59,6 +68,9 @@ class Space private constructor (private val randomAccessFile: RandomAccessFile)
 
         val result = action()
         position += change
+        if (position > length) {
+            length = position
+        }
 
         return result
     }

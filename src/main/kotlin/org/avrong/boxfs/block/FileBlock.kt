@@ -2,8 +2,12 @@ package org.avrong.boxfs.block
 
 import org.avrong.boxfs.container.RangedSpace
 
-class FileBlock(override val rangedSpace: RangedSpace) : Block {
+class FileBlock(rangedSpace: RangedSpace) : Block(BlockType.FILE, rangedSpace) {
+    override fun initBlockData() {
+        TODO("Not yet implemented")
+    }
+
     init {
-        TODO("Not implemented")
+        TODO("Not yet implemented")
     }
 }

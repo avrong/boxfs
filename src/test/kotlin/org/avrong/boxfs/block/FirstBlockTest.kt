@@ -20,9 +20,7 @@ class FirstBlockTest {
 
     val container: Container by lazy {
         val space = Space.fromPath(tempFile)
-        Container(space).apply {
-            createFirstBlock()
-        }
+        Container.fromSpace(space)
     }
 
     @Test
@@ -31,7 +29,7 @@ class FirstBlockTest {
 
         assertEquals(BlockType.FIRST, container.getBlockType(0))
 
-        assertEquals(FirstBlock.BLOCK_SIZE, firstBlock.size)
+        assertEquals(Block.BLOCK_HEADER_SIZE + FirstBlock.BLOCK_DATA_SIZE, firstBlock.spaceSize)
         assertEquals(0, firstBlock.rootDirectoryOffset)
     }
 }

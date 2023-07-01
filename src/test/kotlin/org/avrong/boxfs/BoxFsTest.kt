@@ -1,5 +1,7 @@
 package org.avrong.boxfs
 
+import org.avrong.boxfs.block.Block
+import org.avrong.boxfs.block.FirstBlock
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -14,7 +16,7 @@ class BoxFsTest {
     fun testInitialization() {
         val file = tempDir.toPath().resolve("boxfs.box")
         BoxFs.initialize(file)
-        assertEquals(13, file.fileSize())
+        assertEquals(Block.BLOCK_HEADER_SIZE.toLong() + FirstBlock.BLOCK_DATA_SIZE, file.fileSize())
     }
 
     /*
