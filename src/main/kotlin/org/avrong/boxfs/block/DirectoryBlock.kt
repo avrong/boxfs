@@ -27,6 +27,9 @@ class DirectoryBlock(rangedSpace: RangedSpace) : Block(BlockType.DIRECTORY, rang
     val appendEntryCount: Int
         get() = maxEntryCount - entryCount
 
+    val hasNext: Boolean
+        get() = nextBlockOffset != 0L
+
     fun appendEntries(entryList: List<DirectoryBlockEntry>) {
         val appendOffset = ENTRIES_OFFSET + entryCount * SINGLE_ENTRY_SIZE
 
@@ -80,15 +83,11 @@ class DirectoryBlock(rangedSpace: RangedSpace) : Block(BlockType.DIRECTORY, rang
         const val MIN_INITIAL_ENTRIES_COUNT = 5
 
         fun getInitialBlockDataSize(entryList: List<DirectoryBlockEntry>): Int {
-            return NEXT_BLOCK_SIZE + ENTRY_COUNT_SIZE + max(entryList.size * SINGLE_ENTRY_SIZE, MIN_INITIAL_ENTRIES_COUNT)
+            return NEXT_BLOCK_SIZE + ENTRY_COUNT_SIZE + max(entryList.size, MIN_INITIAL_ENTRIES_COUNT) * SINGLE_ENTRY_SIZE
         }
 
-        fun getPreemptiveBlockDataSize(previousBlockSize: Int): Int {
-            if (previousBlockSize == 0) {
-                return NEXT_BLOCK_SIZE + ENTRY_COUNT_SIZE + (5 * SINGLE_ENTRY_SIZE)
-            }
-
-            return (previousBlockSize - (NEXT_BLOCK_SIZE + ENTRY_COUNT_SIZE)) * 2
+        fun getAdditionalBlockDataSize(previousBlockDataSize: Int): Int {
+            return NEXT_BLOCK_SIZE + ENTRY_COUNT_SIZE + (previousBlockDataSize - (NEXT_BLOCK_SIZE + ENTRY_COUNT_SIZE)) * 2
         }
     }
 }

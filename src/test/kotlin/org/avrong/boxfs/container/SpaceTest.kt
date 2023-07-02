@@ -1,5 +1,6 @@
 package org.avrong.boxfs.container
 
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -20,6 +21,12 @@ class SpaceTest {
 
         val space: Space by lazy {
             Space.fromPath(tempFile)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun close() {
+            space.close()
         }
     }
 
@@ -78,5 +85,17 @@ class SpaceTest {
         assertEquals(integer, space.getIntAt(0))
         assertEquals(str, space.getStringAt(strOffset, str.length))
         assertEquals(long, space.getLongAt(longOffset))
+    }
+
+    @Test
+    fun testRangedSpaceFromEnd() {
+        val end = space.length
+        val size = 10
+        val newEnd = end + size
+        val rangedSpaceFromEnd = space.rangedSpaceFromEnd(size)
+
+        assertEquals(end, rangedSpaceFromEnd.rangeOffset)
+        assertEquals(size, rangedSpaceFromEnd.rangeSize)
+        assertEquals(newEnd, space.length)
     }
 }

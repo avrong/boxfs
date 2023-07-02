@@ -24,6 +24,8 @@ class Container private constructor (private val space: Space) : AutoCloseable {
     }
 
     fun getDirectoryBlock(offset: Long): DirectoryBlock {
+        if (getBlockType(offset) != BlockType.DIRECTORY) throw IllegalArgumentException("Wrong block type")
+
         val rangedSpace = rangedSpaceForBlock(offset)
         return DirectoryBlock(rangedSpace)
     }
@@ -38,6 +40,8 @@ class Container private constructor (private val space: Space) : AutoCloseable {
     }
 
     fun getFileBlock(offset: Long): FileBlock {
+        if (getBlockType(offset) != BlockType.FILE) throw IllegalArgumentException("Wrong block type")
+
         val rangedSpace = rangedSpaceForBlock(offset)
         return FileBlock(rangedSpace)
     }
@@ -52,6 +56,8 @@ class Container private constructor (private val space: Space) : AutoCloseable {
     }
 
     fun getSymbolBlock(offset: Long): SymbolBlock {
+        if (getBlockType(offset) != BlockType.SYMBOL) throw IllegalArgumentException("Wrong block type")
+
         val rangedSpace = rangedSpaceForBlock(offset)
         return SymbolBlock(rangedSpace)
     }

@@ -1,6 +1,6 @@
 package org.avrong.boxfs.container
 
-class RangedSpace(private val space: Space, private val rangeOffset: Long, val rangeSize: Int) {
+class RangedSpace(private val space: Space, val rangeOffset: Long, val rangeSize: Int) {
     val rangeEnd = rangeOffset + rangeSize
 
     fun getByte(offset: Int): Byte = withRangeCheck(offset, Byte.SIZE_BYTES) { globalOffset ->

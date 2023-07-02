@@ -5,8 +5,11 @@ import java.nio.file.Path
 import kotlin.io.path.exists
 
 class Space private constructor (private val randomAccessFile: RandomAccessFile) : AutoCloseable {
-    private var position: Long = 0
-    private var length: Long = randomAccessFile.length()
+    var position: Long = 0
+        private set
+
+    var length: Long = randomAccessFile.length()
+        private set
 
     val isEmpty: Boolean = randomAccessFile.length() == 0L
 
@@ -16,9 +19,10 @@ class Space private constructor (private val randomAccessFile: RandomAccessFile)
 
     fun rangedSpace(globalOffset: Long, size: Int): RangedSpace = RangedSpace(this, globalOffset, size)
     fun rangedSpaceFromEnd(size: Int): RangedSpace {
+        val rangedSpace = RangedSpace(this, length, size)
         length += size
         randomAccessFile.setLength(length)
-        return RangedSpace(this, length, size)
+        return rangedSpace
     }
 
     fun getByteAt(offset: Long): Byte = withPositionChange(offset, Byte.SIZE_BYTES) {

@@ -1,5 +1,6 @@
 package org.avrong.boxfs.container
 
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -25,6 +26,12 @@ class RangedSpaceTest {
 
         val rangedSpace: RangedSpace by lazy {
             RangedSpace(space, 10, 10)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun close() {
+            space.close()
         }
     }
 

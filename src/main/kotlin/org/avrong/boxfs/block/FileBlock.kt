@@ -30,6 +30,9 @@ class FileBlock(rangedSpace: RangedSpace) : Block(BlockType.FILE, rangedSpace) {
     val appendContentSize: Int
         get() = maxContentSize - contentSize
 
+    val hasNext: Boolean
+        get() = nextBlockOffset != 0L
+
     fun appendContent(value: ByteArray) {
         rangedSpace.setBytes(CONTENT_OFFSET + contentSize, value)
         contentSize += value.size
@@ -51,7 +54,8 @@ class FileBlock(rangedSpace: RangedSpace) : Block(BlockType.FILE, rangedSpace) {
         }
 
         fun getAdditionalBlockDataSize(content: ByteArray, previousBlockSize: Int): Int {
-            return content.size + (previousBlockSize * 1.5).toInt()
+            val previousContentSize = previousBlockSize - (NEXT_BLOCK_SIZE + CONTENT_SIZE_SIZE)
+            return NEXT_BLOCK_SIZE + CONTENT_SIZE_SIZE + content.size + (previousContentSize * 1.5).toInt()
         }
     }
 }

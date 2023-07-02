@@ -2,6 +2,7 @@ package org.avrong.boxfs.block
 
 import org.avrong.boxfs.container.Container
 import org.avrong.boxfs.container.Space
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -10,17 +11,25 @@ import kotlin.io.path.createFile
 import kotlin.test.assertEquals
 
 class FirstBlockTest {
-    @field:TempDir
-    lateinit var tempDir: File
+    companion object {
+        @field:TempDir
+        lateinit var tempDir: File
 
-    val tempFile: Path by lazy {
-        val tempFile = tempDir.toPath().resolve("test")
-        tempFile.createFile()
-    }
+        val tempFile: Path by lazy {
+            val tempFile = tempDir.toPath().resolve("test")
+            tempFile.createFile()
+        }
 
-    val container: Container by lazy {
-        val space = Space.fromPath(tempFile)
-        Container.fromSpace(space)
+        val container: Container by lazy {
+            val space = Space.fromPath(tempFile)
+            Container.fromSpace(space)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun close() {
+            container.close()
+        }
     }
 
     @Test

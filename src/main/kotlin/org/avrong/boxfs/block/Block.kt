@@ -10,6 +10,9 @@ abstract class Block(val type: BlockType, protected val rangedSpace: RangedSpace
     val headerSize: Int = BLOCK_HEADER_SIZE
     val dataSize: Int = spaceSize - headerSize
 
+    val offset: Long
+        get() = rangedSpace.rangeOffset
+
     protected abstract fun initBlockData()
 
     fun init() {

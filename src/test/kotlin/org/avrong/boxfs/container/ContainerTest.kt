@@ -1,11 +1,11 @@
 package org.avrong.boxfs.container
 
-import org.avrong.boxfs.block.DirectoryBlock
-import org.avrong.boxfs.block.FileBlock
-import org.avrong.boxfs.block.SymbolBlock
+import org.avrong.boxfs.block.*
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Path
@@ -31,7 +31,14 @@ class ContainerTest {
         val container: Container by lazy {
             Container.fromSpace(space)
         }
+
+        @JvmStatic
+        @AfterAll
+        fun close() {
+            container.close()
+        }
     }
+
 
     @Test
     fun testFirstBlock() {
@@ -41,6 +48,8 @@ class ContainerTest {
 
         // Reset block
         container.initFirstBlock()
+        assertEquals(BlockType.FIRST, container.getBlockType(container.firstBlock.offset))
+        assertEquals(FirstBlock.BLOCK_DATA_SIZE, container.getBlockSize(container.firstBlock.offset))
         assertEquals(0, container.firstBlock.rootDirectoryOffset)
         assertEquals(fileSize, tempFile.fileSize())
     }
@@ -58,6 +67,8 @@ class ContainerTest {
 
         assertTrue(symbolBlock.checkStringFits("abc"))
         assertFalse(symbolBlock.checkStringFits("hello1"))
+
+        assertEquals(symbolName, symbolBlock.string)
     }
 
     @Test
@@ -82,5 +93,11 @@ class ContainerTest {
         assertEquals(blockDataSize, fileBlock.dataSize)
         assertEquals(content.size, fileBlock.contentSize)
         assertContentEquals(content, fileBlock.content)
+    }
+
+    @Test
+    fun getBlockWithWrongType() {
+        val fileBlock = container.createFileBlock(32)
+        assertThrows<IllegalArgumentException> { container.getDirectoryBlock(fileBlock.offset) }
     }
 }
