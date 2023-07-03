@@ -17,6 +17,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+
+    testLogging {
+        showStandardStreams = true
+        events("started", "passed", "skipped", "failed")
+    }
 }
 
 tasks.withType<KotlinCompile> {
