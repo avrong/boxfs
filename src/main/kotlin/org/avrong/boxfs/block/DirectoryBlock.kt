@@ -30,6 +30,10 @@ class DirectoryBlock(rangedSpace: RangedSpace) : Block(BlockType.DIRECTORY, rang
     val hasNext: Boolean
         get() = nextBlockOffset != 0L
 
+    fun appendEntry(entry: DirectoryBlockEntry) {
+        appendEntries(listOf(entry))
+    }
+
     fun appendEntries(entryList: List<DirectoryBlockEntry>) {
         val appendOffset = ENTRIES_OFFSET + entryCount * SINGLE_ENTRY_SIZE
 

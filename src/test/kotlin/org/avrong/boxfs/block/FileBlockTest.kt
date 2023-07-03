@@ -91,7 +91,7 @@ class FileBlockTest {
         val content = ByteArray(100)
         val previousBlockInfoSize = FileBlock.NEXT_BLOCK_SIZE + FileBlock.CONTENT_SIZE_SIZE
         val previousBlockContentSize = 64
-        val additionalContentDataSize = FileBlock.getAdditionalBlockDataSize(content, previousBlockInfoSize + previousBlockContentSize)
+        val additionalContentDataSize = FileBlock.getAdditionalBlockDataSize(content.size, previousBlockInfoSize + previousBlockContentSize)
 
         assertEquals(
             FileBlock.NEXT_BLOCK_SIZE + FileBlock.CONTENT_SIZE_SIZE + content.size + (previousBlockContentSize * 1.5).toInt(),

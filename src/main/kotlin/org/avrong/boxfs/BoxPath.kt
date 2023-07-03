@@ -1,6 +1,9 @@
 package org.avrong.boxfs
 
 class BoxPath(val pathList: List<String>) {
+    // TODO: There is probably need to forbid directory names . and .. as they are used in regular filesystems to
+    //  navigate dir tree
+
     val depth: Int
         get() = pathList.size
 
@@ -15,6 +18,12 @@ class BoxPath(val pathList: List<String>) {
     fun with(dirName: String): BoxPath {
         assert(!dirName.contains("/")) { "Dir name cannot contain slashes"}
         return BoxPath(pathList + listOf(dirName))
+    }
+
+    fun withPath(path: String) = withPath(BoxPath(path))
+
+    fun withPath(path: BoxPath): BoxPath {
+        return BoxPath(pathList + path.pathList)
     }
 
     override fun toString(): String = pathList.joinToString("/", "/")

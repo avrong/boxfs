@@ -53,9 +53,9 @@ class FileBlock(rangedSpace: RangedSpace) : Block(BlockType.FILE, rangedSpace) {
             return NEXT_BLOCK_SIZE + CONTENT_SIZE_SIZE + max(content.size, MIN_INITIAL_BLOCK_CONTENT_SIZE)
         }
 
-        fun getAdditionalBlockDataSize(content: ByteArray, previousBlockSize: Int): Int {
+        fun getAdditionalBlockDataSize(contentSize: Int, previousBlockSize: Int): Int {
             val previousContentSize = previousBlockSize - (NEXT_BLOCK_SIZE + CONTENT_SIZE_SIZE)
-            return NEXT_BLOCK_SIZE + CONTENT_SIZE_SIZE + content.size + (previousContentSize * 1.5).toInt()
+            return NEXT_BLOCK_SIZE + CONTENT_SIZE_SIZE + contentSize + (previousContentSize * 1.5).toInt()
         }
     }
 }

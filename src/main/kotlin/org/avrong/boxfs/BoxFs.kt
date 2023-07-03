@@ -2,11 +2,15 @@ package org.avrong.boxfs
 
 import org.avrong.boxfs.block.BlockType
 import org.avrong.boxfs.block.DirectoryBlock
+import org.avrong.boxfs.block.FileBlock
 import org.avrong.boxfs.block.SymbolBlock
 import org.avrong.boxfs.container.Container
 import org.avrong.boxfs.container.Space
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.nio.file.Path
 import kotlin.io.path.createFile
+import kotlin.math.min
 
 class BoxFs private constructor(
     val path: Path,
@@ -23,6 +27,112 @@ class BoxFs private constructor(
 
         if (directoryEntries.contains(newDirectoryName)) return false
 
+        // TODO: Make smth like createSymbolBlockWithData
+        val symbol = container.createSymbolBlock(SymbolBlock.getBlockDataSize(newDirectoryName))
+        symbol.string = newDirectoryName
+        val newDirectoryBlock = container.createDirectoryBlock(DirectoryBlock.getInitialBlockDataSize(emptyList()))
+        val directoryBlockEntry = DirectoryBlock.DirectoryBlockEntry(symbol.offset, newDirectoryBlock.offset)
+
+        val availableBlock = findAvailableDirectoryBlock(directoryBlock)
+        availableBlock.appendEntry(directoryBlockEntry)
+
+        return true
+    }
+
+    fun listDirectory(path: BoxPath): List<BoxPath>? {
+        val directoryBlock = getDirectoryBlockByPath(path) ?: return null
+        return getAllDirectoryEntries(directoryBlock).map { (nameOffset, _) ->
+            val name = container.getSymbolBlock(nameOffset).string
+            path.with(name)
+        }
+    }
+
+    fun createFile(path: BoxPath): Boolean {
+        val directoryPath = path.withoutLast()
+        val fileName = path.last()
+        val directoryBlock = getDirectoryBlockByPath(directoryPath) ?: return false
+        val directoryEntries = getAllDirectoryEntries(directoryBlock).map { (nameOffset, _) ->
+            val symbolBlock = container.getSymbolBlock(nameOffset)
+            symbolBlock.string
+        }
+
+        // TODO: Introduce smth like checkNameUnique
+        if (directoryEntries.contains(fileName)) return false
+
+        val symbolBlock = container.createSymbolBlock(SymbolBlock.getBlockDataSize(fileName))
+        symbolBlock.string = fileName
+        val fileBlock = container.createFileBlock(FileBlock.getInitialBlockDataSize(ByteArray(0)))
+        val directoryEntry = DirectoryBlock.DirectoryBlockEntry(symbolBlock.offset, fileBlock.offset)
+        val availableDirectoryBlock = findAvailableDirectoryBlock(directoryBlock)
+        availableDirectoryBlock.appendEntry(directoryEntry)
+
+        return true
+    }
+
+    fun writeFile(path: BoxPath, byteArray: ByteArray): Boolean {
+        val targetFileBlock = getFileBlockByPath(path) ?: return false
+
+        val byteArrayStream = ByteArrayInputStream(byteArray)
+        var contentSizeLeft = byteArray.size
+        var currentBlock: FileBlock = targetFileBlock
+        // TODO: Try to get rid of while(true) blocks
+        while (true) {
+            val chunk = ByteArray(min(currentBlock.maxContentSize, contentSizeLeft))
+            val bytesRead = byteArrayStream.read(chunk)
+            contentSizeLeft -= bytesRead
+            currentBlock.content = chunk
+
+            if (contentSizeLeft == 0) break
+
+            if (currentBlock.hasNext) {
+                currentBlock = container.getFileBlock(currentBlock.nextBlockOffset)
+            } else {
+                val newBlock = container.createFileBlock(FileBlock.getAdditionalBlockDataSize(contentSizeLeft, currentBlock.dataSize))
+                currentBlock.nextBlockOffset = newBlock.offset
+                currentBlock = newBlock
+            }
+        }
+
+        return true
+    }
+
+    fun readFile(path: BoxPath): ByteArray? {
+        val targetFileBlock = getFileBlockByPath(path) ?: return null
+
+        val byteStream = ByteArrayOutputStream()
+        var currentBlock = targetFileBlock
+        while (true) {
+            byteStream.writeBytes(currentBlock.content)
+
+            if (currentBlock.hasNext) {
+                currentBlock = container.getFileBlock(currentBlock.nextBlockOffset)
+            } else {
+                break
+            }
+        }
+
+        return byteStream.toByteArray()
+    }
+
+    fun getFileSize(path: BoxPath): Int? {
+        val targetFileBlock = getFileBlockByPath(path) ?: return null
+
+        var size = 0
+        var currentBlock = targetFileBlock
+        while (true) {
+            size += currentBlock.contentSize
+
+            if (currentBlock.hasNext) {
+                currentBlock = container.getFileBlock(currentBlock.nextBlockOffset)
+            } else {
+                break
+            }
+        }
+
+        return size
+    }
+
+    private fun findAvailableDirectoryBlock(directoryBlock: DirectoryBlock): DirectoryBlock {
         // Try to find an available block
         var availableBlock: DirectoryBlock
         var currentBlock = directoryBlock
@@ -44,23 +154,7 @@ class BoxFs private constructor(
             }
         }
 
-        // TODO: Make smth like createSymbolBlockWithData
-        val symbol = container.createSymbolBlock(SymbolBlock.getBlockDataSize(newDirectoryName))
-        symbol.string = newDirectoryName
-        val newDirectoryBlock = container.createDirectoryBlock(DirectoryBlock.getInitialBlockDataSize(emptyList()))
-        val directoryBlockEntry = DirectoryBlock.DirectoryBlockEntry(symbol.offset, newDirectoryBlock.offset)
-
-        availableBlock.appendEntries(listOf(directoryBlockEntry))
-
-        return true
-    }
-
-    fun list(path: BoxPath): List<BoxPath>? {
-        val directoryBlock = getDirectoryBlockByPath(path) ?: return null
-        return getAllDirectoryEntries(directoryBlock).map { (nameOffset, _) ->
-            val name = container.getSymbolBlock(nameOffset).string
-            path.with(name)
-        }
+        return availableBlock
     }
 
     private fun getDirectoryBlockByPath(path: BoxPath): DirectoryBlock? {
@@ -86,6 +180,29 @@ class BoxFs private constructor(
         }
 
         return currentBlock
+    }
+
+    fun getFileBlockByPath(path: BoxPath): FileBlock? {
+        // TODO: Search can be optimized, return as soon as we found the needed file
+        //  Smth like directory iterator?
+        val directoryPath = path.withoutLast()
+        val fileName = path.last()
+        val directoryBlock = getDirectoryBlockByPath(directoryPath) ?: return null
+        val directoryEntries = getAllDirectoryEntries(directoryBlock)
+
+        for ((symbolOffset, blockOffset) in directoryEntries) {
+            val name = container.getSymbolBlock(symbolOffset).string
+
+            if (name == fileName) {
+                return if (container.getBlockType(blockOffset) == BlockType.FILE) {
+                    container.getFileBlock(blockOffset)
+                } else {
+                    null
+                }
+            }
+        }
+
+        return null
     }
 
     private fun getAllDirectoryEntries(firstDirectoryBlock: DirectoryBlock): List<DirectoryBlock.DirectoryBlockEntry> {

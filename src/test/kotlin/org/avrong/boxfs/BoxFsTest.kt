@@ -1,9 +1,12 @@
 package org.avrong.boxfs
 
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Path
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class BoxFsTest {
@@ -19,7 +22,7 @@ class BoxFsTest {
     fun testInitialization() {
         val boxFs = BoxFs.create(tempDir.resolve("init"))
         val rootPath = BoxPath("/")
-        assertEquals(emptyList(), boxFs.list(rootPath))
+        assertEquals(emptyList(), boxFs.listDirectory(rootPath))
     }
 
     @Test
@@ -28,10 +31,11 @@ class BoxFsTest {
 
         val rootPath = BoxPath("/")
         val srcPath = BoxPath("/src")
-        boxFs.createDirectory(srcPath)
+        val createDirResult = boxFs.createDirectory(srcPath)
 
-        assertEquals(emptyList(), boxFs.list(srcPath))
-        assertEquals(listOf(srcPath), boxFs.list(rootPath))
+        assertTrue(createDirResult)
+        assertEquals(emptyList(), boxFs.listDirectory(srcPath))
+        assertEquals(listOf(srcPath), boxFs.listDirectory(rootPath))
     }
 
     @Test
@@ -45,8 +49,8 @@ class BoxFsTest {
             dirs.add(path)
         }
 
-        assertEquals(dirs, boxFs.list(BoxPath("/")))
-        assertEquals(emptyList(), boxFs.list(BoxPath("/10")))
+        assertEquals(dirs, boxFs.listDirectory(BoxPath("/")))
+        assertEquals(emptyList(), boxFs.listDirectory(BoxPath("/10")))
     }
 
     @Test
@@ -59,9 +63,64 @@ class BoxFsTest {
             boxFs.createDirectory(path)
         }
 
-        assertEquals(listOf(BoxPath("/1")), boxFs.list(BoxPath("/")))
-        assertEquals(listOf(BoxPath("/1/2/3/4/5/6/7/8")), boxFs.list(BoxPath("/1/2/3/4/5/6/7")))
-        assertEquals(emptyList(), boxFs.list(path))
+        assertEquals(listOf(BoxPath("/1")), boxFs.listDirectory(BoxPath("/")))
+        assertEquals(listOf(BoxPath("/1/2/3/4/5/6/7/8")), boxFs.listDirectory(BoxPath("/1/2/3/4/5/6/7")))
+        assertEquals(emptyList(), boxFs.listDirectory(path))
+    }
+
+    @Test
+    fun testCreateDirectoriesSameNames() {
+        val boxFs = BoxFs.create(tempDir.resolve("create_dirs_same_names"))
+
+        val dirName = BoxPath("/hello")
+        val childDirName = dirName.with("world")
+        val firstResult = boxFs.createDirectory(dirName)
+        boxFs.createDirectory(childDirName)
+        val secondResult = boxFs.createDirectory(dirName)
+
+        assertTrue(firstResult)
+        assertFalse(secondResult) // check second time dir was not created
+        assertEquals(listOf(childDirName), boxFs.listDirectory(dirName))
+    }
+
+    @Test
+    fun testCreateFile() {
+        val boxFs = BoxFs.create(tempDir.resolve("create_file"))
+
+        val filePath = BoxPath("/.gitignore")
+        val createFileResult = boxFs.createFile(filePath)
+
+        assertTrue(createFileResult)
+        assertEquals(0, boxFs.getFileSize(filePath))
+        assertContentEquals(ByteArray(0), boxFs.readFile(filePath))
+    }
+
+    @Test
+    fun testWriteReadSmallFile() {
+        val boxFs = BoxFs.create(tempDir.resolve("read_small_file"))
+
+        val filePath = BoxPath("/README.md")
+        boxFs.createFile(filePath)
+
+        val content = "Hello World!".toByteArray()
+        boxFs.writeFile(filePath, content)
+
+        assertEquals(content.size, boxFs.getFileSize(filePath))
+        assertContentEquals(content, boxFs.readFile(filePath))
+    }
+
+    @Test
+    fun testWriteReadLargeFile() {
+        val boxFs = BoxFs.create(tempDir.resolve("read_large_file"))
+
+        val filePath = BoxPath("/README.md")
+        boxFs.createFile(filePath)
+
+        val content = "quick brown fox jumps over the lazy dog, and then ".repeat(5).trim().toByteArray()
+        boxFs.writeFile(filePath, content)
+
+        assertEquals(content.size, boxFs.getFileSize(filePath))
+        assertContentEquals(content, boxFs.readFile(filePath))
     }
 
     /*
