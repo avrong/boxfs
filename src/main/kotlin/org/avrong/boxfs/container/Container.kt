@@ -10,7 +10,7 @@ class Container private constructor (private val space: Space) : AutoCloseable {
         }
 
     fun initFirstBlock() {
-        val rangedSpace = RangedSpace(space, 0, Block.BLOCK_HEADER_SIZE + FirstBlock.BLOCK_DATA_SIZE)
+        val rangedSpace = space.rangedSpace(0, Block.BLOCK_HEADER_SIZE + FirstBlock.BLOCK_DATA_SIZE)
         FirstBlock(rangedSpace).init()
     }
 

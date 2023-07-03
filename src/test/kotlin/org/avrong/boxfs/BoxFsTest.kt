@@ -1,22 +1,67 @@
 package org.avrong.boxfs
 
-import org.avrong.boxfs.block.Block
-import org.avrong.boxfs.block.FirstBlock
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
-import kotlin.io.path.fileSize
+import java.nio.file.Path
 import kotlin.test.assertEquals
 
 class BoxFsTest {
-    @field:TempDir
-    lateinit var tempDir: File
+
+    companion object {
+        @field:TempDir
+        lateinit var _tempDir: File
+        val tempDir: Path
+            get() = _tempDir.toPath()
+    }
 
     @Test
     fun testInitialization() {
-        val file = tempDir.toPath().resolve("boxfs.box")
-        BoxFs.initialize(file)
-        assertEquals(Block.BLOCK_HEADER_SIZE.toLong() + FirstBlock.BLOCK_DATA_SIZE, file.fileSize())
+        val boxFs = BoxFs.create(tempDir.resolve("init"))
+        val rootPath = BoxPath("/")
+        assertEquals(emptyList(), boxFs.list(rootPath))
+    }
+
+    @Test
+    fun testCreateDirectory() {
+        val boxFs = BoxFs.create(tempDir.resolve("create_dir"))
+
+        val rootPath = BoxPath("/")
+        val srcPath = BoxPath("/src")
+        boxFs.createDirectory(srcPath)
+
+        assertEquals(emptyList(), boxFs.list(srcPath))
+        assertEquals(listOf(srcPath), boxFs.list(rootPath))
+    }
+
+    @Test
+    fun testCreateManyDirectories() {
+        val boxFs = BoxFs.create(tempDir.resolve("create_many_dirs"))
+
+        val dirs = mutableListOf<BoxPath>()
+        for (i in 1..10) {
+            val path = BoxPath("/$i")
+            boxFs.createDirectory(path)
+            dirs.add(path)
+        }
+
+        assertEquals(dirs, boxFs.list(BoxPath("/")))
+        assertEquals(emptyList(), boxFs.list(BoxPath("/10")))
+    }
+
+    @Test
+    fun testCreateDeepDirectories() {
+        val boxFs = BoxFs.create(tempDir.resolve("create_deep_dirs"))
+
+        var path = BoxPath("/")
+        for (i in 1..10) {
+            path = path.with(i.toString())
+            boxFs.createDirectory(path)
+        }
+
+        assertEquals(listOf(BoxPath("/1")), boxFs.list(BoxPath("/")))
+        assertEquals(listOf(BoxPath("/1/2/3/4/5/6/7/8")), boxFs.list(BoxPath("/1/2/3/4/5/6/7")))
+        assertEquals(emptyList(), boxFs.list(path))
     }
 
     /*
