@@ -1,5 +1,7 @@
 # BoxFS
 
+![check workflow](https://github.com/avrong/boxfs/actions/workflows/check.yaml/badge.svg)
+
 Single-file container for files.
 
 ## Overview
