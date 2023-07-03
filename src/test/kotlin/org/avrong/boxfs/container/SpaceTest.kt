@@ -76,7 +76,7 @@ class SpaceTest {
         val strOffset = integerOffset + Int.SIZE_BYTES
 
         val long = 24L
-        val longOffset = strOffset + str.length
+        val longOffset = strOffset + str.toByteArray().size
 
         space.setIntAt(0, integer)
         space.setStringAt(strOffset, str)

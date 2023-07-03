@@ -39,7 +39,6 @@ class ContainerTest {
         }
     }
 
-
     @Test
     fun testFirstBlock() {
         container.firstBlock.rootDirectoryOffset = 42
@@ -63,7 +62,7 @@ class ContainerTest {
         symbolBlock.string = symbolName
 
         assertEquals(blockDataSize, symbolBlock.dataSize)
-        assertEquals(symbolName.length, symbolBlock.length)
+        assertEquals(symbolName.toByteArray().size, symbolBlock.stringBytesSize)
 
         assertTrue(symbolBlock.checkStringFits("abc"))
         assertFalse(symbolBlock.checkStringFits("hello1"))

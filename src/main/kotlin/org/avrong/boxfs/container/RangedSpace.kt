@@ -26,11 +26,11 @@ class RangedSpace(private val space: Space, val rangeOffset: Long, val rangeSize
         space.setLongAt(globalOffset, value)
     }
 
-    fun getString(offset: Int, size: Int): String = withRangeCheck(offset, size * Char.SIZE_BYTES) { globalOffset ->
-        space.getStringAt(globalOffset, size)
+    fun getString(offset: Int, bytesSize: Int): String = withRangeCheck(offset, bytesSize) { globalOffset ->
+        space.getStringAt(globalOffset, bytesSize)
     }
 
-    fun setString(offset: Int, value: String) = withRangeCheck(offset, value.length * Char.SIZE_BYTES) { globalOffset ->
+    fun setString(offset: Int, value: String) = withRangeCheck(offset, value.toByteArray().size) { globalOffset ->
         space.setStringAt(globalOffset, value)
     }
 

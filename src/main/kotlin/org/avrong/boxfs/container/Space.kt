@@ -11,7 +11,8 @@ class Space private constructor (private val randomAccessFile: RandomAccessFile)
     var length: Long = randomAccessFile.length()
         private set
 
-    val isEmpty: Boolean = randomAccessFile.length() == 0L
+    val isEmpty: Boolean
+        get() = randomAccessFile.length() == 0L
 
     init {
         position = randomAccessFile.filePointer
@@ -33,7 +34,7 @@ class Space private constructor (private val randomAccessFile: RandomAccessFile)
         randomAccessFile.writeByte(byte.toInt())
     }
 
-    fun getIntAt(offset: Long): Int = withPositionChange(offset, Byte.SIZE_BYTES) {
+    fun getIntAt(offset: Long): Int = withPositionChange(offset, Int.SIZE_BYTES) {
         randomAccessFile.readInt()
     }
 
@@ -49,14 +50,14 @@ class Space private constructor (private val randomAccessFile: RandomAccessFile)
         randomAccessFile.writeLong(value)
     }
 
-    fun getStringAt(offset: Long, size: Int): String = withPositionChange(offset, size * Char.SIZE_BYTES) {
-        val byteArray = ByteArray(size)
+    fun getStringAt(offset: Long, byteSize: Int): String = withPositionChange(offset, byteSize) {
+        val byteArray = ByteArray(byteSize)
         randomAccessFile.readFully(byteArray)
 
         String(byteArray)
     }
 
-    fun setStringAt(offset: Long, value: String) = withPositionChange(offset, value.length * Char.SIZE_BYTES) {
+    fun setStringAt(offset: Long, value: String) = withPositionChange(offset, value.toByteArray().size) {
         randomAccessFile.write(value.toByteArray())
     }
 

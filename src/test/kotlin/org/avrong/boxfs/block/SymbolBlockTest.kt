@@ -51,7 +51,7 @@ class SymbolBlockTest {
         symbolBlock.string = str
 
         assertEquals(str, symbolBlock.string)
-        assertEquals(str.length, symbolBlock.length)
+        assertEquals(str.length, symbolBlock.stringBytesSize)
     }
 
     @Test
@@ -59,6 +59,6 @@ class SymbolBlockTest {
         val data = "something"
         val dataSize = SymbolBlock.getBlockDataSize(data)
 
-        assertEquals(SymbolBlock.OCCUPIED_SIZE + data.length * 2, dataSize)
+        assertEquals(SymbolBlock.OCCUPIED_SIZE + data.toByteArray().size, dataSize)
     }
 }
