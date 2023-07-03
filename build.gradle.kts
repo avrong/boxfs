@@ -20,7 +20,7 @@ tasks.test {
 
     testLogging {
         showStandardStreams = true
-        events("started", "passed", "skipped", "failed")
+        events("passed", "skipped", "failed")
     }
 }
 
