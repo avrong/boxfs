@@ -190,6 +190,123 @@ class BoxFs private constructor(
         return false
     }
 
+    fun delete(path: BoxPath): Boolean {
+        val directoryPath = path.withoutLast()
+        val elementName = path.last()
+
+        val directoryBlock = getDirectoryBlockByPath(directoryPath) ?: return false
+        val directoryEntries = getAllDirectoryEntries(directoryBlock)
+
+        // TODO: Writes can be optimized here, we should swap the deleted entry with last existing
+
+        val updatedDirectoryEntries = directoryEntries.filterNot {
+            val name = container.getSymbolBlock(it.nameOffset).string
+            name == elementName
+        }
+        if (directoryEntries.size == updatedDirectoryEntries.size) return false
+
+        writeDirectoryEntries(directoryBlock, updatedDirectoryEntries)
+        return true
+    }
+
+    fun move(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
+        val fromDirectoryPath = pathFrom.withoutLast()
+        val fromElementName = pathFrom.last()
+        val toDirectoryPath = pathTo.withoutLast()
+        val toElementName = pathTo.last()
+
+        val fromDirectoryBlock = getDirectoryBlockByPath(fromDirectoryPath) ?: return false
+        val toDirectoryBlock = getDirectoryBlockByPath(toDirectoryPath) ?: return false
+
+        val fromDirectoryBlockEntries = getAllDirectoryEntries(fromDirectoryBlock)
+        val fromDirectoryBlockEntriesNames = fromDirectoryBlockEntries.map { container.getSymbolBlock(it.nameOffset).string }
+
+        val directoryEntryIndex = fromDirectoryBlockEntriesNames.indexOf(fromElementName)
+        if (directoryEntryIndex == -1) return false
+
+        val elementToMove = fromDirectoryBlockEntries[directoryEntryIndex]
+
+        // TODO: We might need to merge dirs here if directory is moved. For now, let's just reject move if there is
+        //  already dir/file with the same name
+        val toDirectoryBlockEntries = getAllDirectoryEntries(toDirectoryBlock)
+        val toDirectoryBlockEntriesNames = toDirectoryBlockEntries.map { container.getSymbolBlock(it.nameOffset).string }
+        if (toDirectoryBlockEntriesNames.contains(toElementName)) return false
+
+        val updatedFromDirectoryEntries = fromDirectoryBlockEntries.filterIndexed { idx, _ -> idx != directoryEntryIndex }
+        writeDirectoryEntries(fromDirectoryBlock, updatedFromDirectoryEntries)
+
+        val availableBlock = findAvailableDirectoryBlock(toDirectoryBlock)
+        val symbolBlock = container.getSymbolBlock(elementToMove.nameOffset)
+        val updatedSymbol = updateSymbol(symbolBlock, toElementName)
+        availableBlock.appendEntry(elementToMove.copy(nameOffset = updatedSymbol.offset))
+
+        return true
+    }
+
+    fun rename(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
+        val fromDirectoryPath = pathFrom.withoutLast()
+        val toDirectoryPath = pathTo.withoutLast()
+
+        // Do not rename if entries aren't in the same directory
+        if (fromDirectoryPath != toDirectoryPath) return false
+
+        val fromName = pathFrom.last()
+        val toName = pathTo.last()
+
+        val directoryBlock = getDirectoryBlockByPath(fromDirectoryPath) ?: return false
+        val directoryEntries = getAllDirectoryEntries(directoryBlock)
+
+        // TODO: Can be optimized if we would have ability to edit list entry individually
+        var found = false
+        val updatedDirectoryEntries = directoryEntries.map {
+            val symbol = container.getSymbolBlock(it.nameOffset)
+            if (symbol.string == fromName) {
+                found = true
+
+                val updatedSymbol = updateSymbol(symbol, toName)
+                it.copy(nameOffset = updatedSymbol.offset)
+            } else {
+                it
+            }
+        }
+        if (!found) return false
+
+        writeDirectoryEntries(directoryBlock, updatedDirectoryEntries)
+        return true
+    }
+
+    private fun updateSymbol(symbolBlock: SymbolBlock, name: String): SymbolBlock {
+        return if (symbolBlock.checkStringFits(name)) {
+            symbolBlock.string = name
+            symbolBlock
+        } else {
+            val newSymbolBlock = container.createSymbolBlock(SymbolBlock.getBlockDataSize(name))
+            newSymbolBlock.string = name
+            newSymbolBlock
+        }
+    }
+
+    private fun writeDirectoryEntries(firstDirectoryBlock: DirectoryBlock, entries: List<DirectoryBlock.DirectoryBlockEntry>) {
+        var reader = entries
+        var currentBlock: DirectoryBlock = firstDirectoryBlock
+        while (true) {
+            val count = min(currentBlock.maxEntryCount, entries.size)
+            val currentEntries = reader.take(count)
+            reader = reader.drop(count)
+            currentBlock.entries = currentEntries
+
+            if (currentBlock.hasNext) {
+                currentBlock = container.getDirectoryBlock(currentBlock.nextBlockOffset)
+            } else if (reader.isNotEmpty()) {
+                val newBlock = container.createDirectoryBlock(DirectoryBlock.getAdditionalBlockDataSize(currentBlock.dataSize))
+                currentBlock.nextBlockOffset = newBlock.offset
+                currentBlock = newBlock
+            } else {
+                break
+            }
+        }
+    }
+
     private fun findAvailableDirectoryBlock(directoryBlock: DirectoryBlock): DirectoryBlock {
         // Try to find an available block
         var availableBlock: DirectoryBlock

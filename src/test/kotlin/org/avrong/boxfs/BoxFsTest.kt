@@ -178,6 +178,83 @@ class BoxFsTest {
         assertFalse(boxFs.exists(BoxPath("/1/3")))
     }
 
+    @Test
+    fun testDelete() {
+        val boxFs = BoxFs.create(tempDir.resolve("delete"))
+
+        val dirs = listOf("/1", "/2", "/2/3", "/2/4", "/5", "/5/6", "/5/6/7").map { BoxPath(it) }
+        val files = listOf("/1/a", "/2/b", "/c", "/5/6/d").map { BoxPath(it) }
+
+        dirs.forEach { boxFs.createDirectory(it) }
+        files.forEach { boxFs.createFile(it) }
+
+        assertContentEquals(setOf("/2/3", "/2/4", "/2/b").map { BoxPath(it)}, boxFs.listDirectory(BoxPath("/2")))
+        assertTrue(boxFs.delete(BoxPath("/2/4")))
+        assertContentEquals(setOf("/2/3", "/2/b").map { BoxPath(it)}, boxFs.listDirectory(BoxPath("/2")))
+        assertTrue(boxFs.delete(BoxPath("/2/b")))
+        assertContentEquals(setOf("/2/3").map { BoxPath(it)}, boxFs.listDirectory(BoxPath("/2")))
+    }
+
+    @Test
+    fun testRename() {
+        val boxFs = BoxFs.create(tempDir.resolve("rename"))
+
+        val dir = BoxPath("/hello/java")
+        val newDir = BoxPath("/hello/kotlin")
+
+        boxFs.createDirectory(BoxPath("/hello"))
+        boxFs.createDirectory(dir)
+
+        // Check old dir exists
+        assertTrue(boxFs.exists(dir))
+
+        // Rename
+        assertTrue(boxFs.rename(dir, newDir))
+
+        // Check new dir
+        assertFalse(boxFs.exists(dir))
+        assertTrue(boxFs.exists(newDir))
+
+        assertEquals(listOf(newDir), boxFs.listDirectory(BoxPath("/hello")))
+    }
+
+    @Test
+    fun testRenameNotSameDir() {
+        val boxFs = BoxFs.create(tempDir.resolve("rename_not_same_dir"))
+
+        val dir = BoxPath("/hello/java")
+        val newDir = BoxPath("/another/kotlin")
+
+        boxFs.createDirectory(BoxPath("/hello"))
+        boxFs.createDirectory(dir)
+
+        // Check that rename did not happen
+        assertFalse(boxFs.rename(dir, newDir))
+        assertEquals(listOf(dir), boxFs.listDirectory(BoxPath("/hello")))
+        assertEquals(listOf(BoxPath("/hello")), boxFs.listDirectory(BoxPath("/")))
+    }
+
+    @Test
+    fun testMove() {
+        val boxFs = BoxFs.create(tempDir.resolve("move"))
+
+        val dirs = listOf("/1", "/2", "/2/3", "/2/4", "/5", "/5/6", "/5/6/7").map { BoxPath(it) }
+        val files = listOf("/1/a", "/2/b", "/c", "/5/6/d").map { BoxPath(it) }
+
+        dirs.forEach { boxFs.createDirectory(it) }
+        files.forEach { boxFs.createFile(it) }
+
+        assertTrue(boxFs.exists(BoxPath("/2")))
+
+        // Move
+        boxFs.move(BoxPath("/2"), BoxPath("/5/2"))
+
+        // Check moved dir
+        assertFalse(boxFs.exists(BoxPath("/2")))
+        assertTrue(boxFs.exists(BoxPath("/5/2")))
+        assertTrue(boxFs.exists(BoxPath("/5/2/3")))
+    }
+
     /*
     TODO: Complete functional test
      - store all project trees
