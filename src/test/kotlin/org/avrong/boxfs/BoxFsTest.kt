@@ -1,21 +1,32 @@
 package org.avrong.boxfs
 
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class BoxFsTest {
-
     companion object {
-        @field:TempDir
-        lateinit var _tempDir: File
-        val tempDir: Path
-            get() = _tempDir.toPath()
+        lateinit var tempDir: Path
+
+        @JvmStatic
+        @BeforeAll
+        fun beforeAll(): Unit {
+            tempDir = Files.createTempDirectory(null)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun afterAll() {
+            tempDir.toFile().delete()
+        }
     }
 
     @Test
