@@ -79,8 +79,48 @@ class BoxFs private constructor(
         while (true) {
             val chunk = ByteArray(min(currentBlock.maxContentSize, contentSizeLeft))
             val bytesRead = byteArrayStream.read(chunk)
-            contentSizeLeft -= bytesRead
+
+            if (bytesRead == -1) {
+                contentSizeLeft = 0
+            } else {
+                contentSizeLeft -= bytesRead
+            }
+
             currentBlock.content = chunk
+
+            if (currentBlock.hasNext) {
+                currentBlock = container.getFileBlock(currentBlock.nextBlockOffset)
+            } else if (contentSizeLeft > 0) {
+                val newBlock = container.createFileBlock(FileBlock.getAdditionalBlockDataSize(contentSizeLeft, currentBlock.dataSize))
+                currentBlock.nextBlockOffset = newBlock.offset
+                currentBlock = newBlock
+            } else {
+                break
+            }
+        }
+
+        return true
+    }
+
+    fun appendFile(path: BoxPath, byteArray: ByteArray): Boolean {
+        val targetFileBlock = getFileBlockByPath(path) ?: return false
+
+        val byteArrayStream = ByteArrayInputStream(byteArray)
+        var contentSizeLeft = byteArray.size
+        var currentBlock: FileBlock = targetFileBlock
+        while (true) {
+            // TODO: If there are non-full blocks in the middle of file (which ideally should not ever happen),
+            //  then it will write to the middle block where there is space. This will corrupt file!
+            if (currentBlock.appendContentSize > 0) {
+                val chunk = ByteArray(min(currentBlock.appendContentSize, contentSizeLeft))
+                val bytesRead = byteArrayStream.read(chunk)
+                contentSizeLeft -= bytesRead
+
+                val newContentStream = ByteArrayOutputStream()
+                newContentStream.writeBytes(currentBlock.content)
+                newContentStream.writeBytes(chunk)
+                currentBlock.content = newContentStream.toByteArray()
+            }
 
             if (contentSizeLeft == 0) break
 

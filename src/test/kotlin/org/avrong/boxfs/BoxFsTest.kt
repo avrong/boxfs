@@ -123,6 +123,46 @@ class BoxFsTest {
         assertContentEquals(content, boxFs.readFile(filePath))
     }
 
+    @Test
+    fun testRewriteFile() {
+        val boxFs = BoxFs.create(tempDir.resolve("rewrite_file"))
+
+        val filePath = BoxPath("/README.md")
+        boxFs.createFile(filePath)
+
+        val content = "Shall I compare thee to the summer's day? Thou art art more lovely and more temperate."
+            .toByteArray()
+        boxFs.writeFile(filePath, content)
+        assertEquals(content.size, boxFs.getFileSize(filePath))
+        assertContentEquals(content, boxFs.readFile(filePath))
+
+        val newContent = "Rough winds do shake the darling buds of May"
+            .toByteArray()
+        boxFs.writeFile(filePath, newContent)
+
+        assertEquals(newContent.size, boxFs.getFileSize(filePath))
+        assertContentEquals(newContent, boxFs.readFile(filePath))
+    }
+
+    @Test
+    fun testAppendFile() {
+        val boxFs = BoxFs.create(tempDir.resolve("append_file"))
+
+        val content = listOf("Let me not to the marriage of true minds. ", "Admit impediments. ", "Love is not love")
+
+        val filePath = BoxPath("/README.md")
+        boxFs.createFile(filePath)
+        boxFs.appendFile(filePath, content[0].toByteArray())
+        boxFs.appendFile(filePath, content[1].toByteArray())
+        assertContentEquals((content[0] + content[1]).toByteArray(), boxFs.readFile(filePath))
+
+        // Empty file
+        boxFs.writeFile(filePath, ByteArray(0))
+
+        boxFs.appendFile(filePath, content[2].toByteArray())
+        assertContentEquals(content[2].toByteArray(), boxFs.readFile(filePath))
+    }
+
     /*
     TODO: Complete functional test
      - store all project trees
