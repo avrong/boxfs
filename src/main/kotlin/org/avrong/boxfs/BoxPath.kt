@@ -1,5 +1,7 @@
 package org.avrong.boxfs
 
+import java.nio.file.Path
+
 class BoxPath(val pathList: List<String>) {
     // TODO: There is probably need to forbid directory names . and .. as they are used in regular filesystems to
     //  navigate dir tree
@@ -32,6 +34,7 @@ class BoxPath(val pathList: List<String>) {
 
     fun isEmpty(): Boolean = pathList.isEmpty()
 
+    fun toPath(): Path = Path.of(pathList.joinToString("/"))
     override fun toString(): String = pathList.joinToString("/", "/")
 
     override fun equals(other: Any?): Boolean {

@@ -7,6 +7,9 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.createDirectory
+import kotlin.io.path.readBytes
+import kotlin.io.path.readText
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
@@ -302,6 +305,41 @@ class BoxFsTest {
             "It's something unpredictable, but in the end it's right. I hope you had the time of your life",
             String(boxFs.readFile("/rock/punk/greenday.txt".toBoxPath())!!)
         )
+    }
+
+    @Test
+    fun testPopulationAndTreeVisitor() {
+        val boxFs = BoxFs.create(tempDir.resolve("population_tree"))
+        val testResourcesPath = Path.of(BoxFsTest::class.java.getResource("/test")!!.path)
+        val localPath = testResourcesPath.resolve("bands/")
+        val expectedTree = testResourcesPath.resolve("bands-tree.txt").readText()
+
+        val rootPath = BoxPath("/")
+        boxFs.populate(localPath, rootPath)
+
+        val visualTree = boxFs.getVisualTree(rootPath)
+
+        assertEquals(expectedTree, visualTree)
+    }
+
+    @Test
+    fun testMaterialize() {
+        val boxFs = BoxFs.create(tempDir.resolve("populate_and_materialize"))
+        val outputPath = tempDir.resolve("materialize/")
+        outputPath.createDirectory()
+
+        // Populate into container
+        val testBandsPath = Path.of(BoxFsTest::class.java.getResource("/test/bands")!!.path)
+        boxFs.populate(testBandsPath, "/".toBoxPath())
+
+        // Materialize it back
+        boxFs.materialize("/".toBoxPath(), outputPath)
+
+        assertTrue(Files.exists(outputPath.resolve("rock/punk/paramore.txt")))
+        assertTrue(Files.exists(outputPath.resolve("folk/simon and garfunkel.txt")))
+
+        val bonIverPath = "folk/BonIver.txt"
+        assertContentEquals(boxFs.readFile(bonIverPath.toBoxPath()), outputPath.resolve(bonIverPath).readBytes())
     }
 
     /*

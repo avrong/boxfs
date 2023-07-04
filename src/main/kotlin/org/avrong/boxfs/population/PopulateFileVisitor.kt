@@ -1,5 +1,8 @@
-package org.avrong.boxfs
+package org.avrong.boxfs.population
 
+import org.avrong.boxfs.BoxFs
+import org.avrong.boxfs.BoxPath
+import org.avrong.boxfs.toBoxPath
 import java.nio.file.FileVisitResult
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor

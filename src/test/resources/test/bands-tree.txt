@@ -1,0 +1,12 @@
+rock/
+  classic/
+    thebeatles.txt
+    queen.txt
+  punk/
+    greenday.txt
+    paramore.txt
+    blink-182.txt
+folk/
+  BonIver.txt
+  simon and garfunkel.txt
+  firstaidband.txt

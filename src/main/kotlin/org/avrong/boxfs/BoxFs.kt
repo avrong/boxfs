@@ -6,6 +6,10 @@ import org.avrong.boxfs.block.FileBlock
 import org.avrong.boxfs.block.SymbolBlock
 import org.avrong.boxfs.container.Container
 import org.avrong.boxfs.container.Space
+import org.avrong.boxfs.population.PopulateFileVisitor
+import org.avrong.boxfs.visitor.BoxFsVisitor
+import org.avrong.boxfs.visitor.MaterializeVisitor
+import org.avrong.boxfs.visitor.VisualTreeVisitor
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
@@ -298,6 +302,40 @@ class BoxFs private constructor(
         Files.walkFileTree(path, visitor)
     }
 
+    fun materialize(internalDirPath: BoxPath, outputDirPath: Path) {
+        val materializeVisitor = MaterializeVisitor(this, outputDirPath)
+        visitFileTree(internalDirPath, materializeVisitor)
+    }
+
+    fun getVisualTree(dirPath: BoxPath): String {
+        val visualTreeVisitor = VisualTreeVisitor()
+        visitFileTree(dirPath, visualTreeVisitor)
+        return visualTreeVisitor.visualTree
+    }
+
+    fun visitFileTree(dirPath: BoxPath, visitor: BoxFsVisitor) {
+        recursiveDirectoryVisitor(dirPath, visitor)
+    }
+
+    private fun recursiveDirectoryVisitor(dirPath: BoxPath, visitor: BoxFsVisitor) {
+        val directoryBlock = getDirectoryBlockByPath(dirPath) ?: return
+        val directoryBlockEntries = getAllDirectoryEntries(directoryBlock)
+
+        for ((nameOffset, valueOffset) in directoryBlockEntries) {
+            val name = container.getSymbolBlock(nameOffset).string
+            val path = dirPath.with(name)
+            val blockType = container.getBlockType(valueOffset)
+
+            if (blockType == BlockType.DIRECTORY) {
+                visitor.preVisitDirectory(path)
+                recursiveDirectoryVisitor(path, visitor)
+                visitor.postVisitDirectory(path)
+            } else if (blockType == BlockType.FILE) {
+                visitor.visitFile(path)
+            }
+        }
+    }
+
     private fun updateSymbol(symbolBlock: SymbolBlock, name: String): SymbolBlock {
         return if (symbolBlock.checkStringFits(name)) {
             symbolBlock.string = name
@@ -380,7 +418,7 @@ class BoxFs private constructor(
         return currentBlock
     }
 
-    fun getFileBlockByPath(path: BoxPath): FileBlock? {
+    private fun getFileBlockByPath(path: BoxPath): FileBlock? {
         // TODO: Search can be optimized, return as soon as we found the needed file
         //  Smth like directory iterator?
         val directoryPath = path.withoutLast()
