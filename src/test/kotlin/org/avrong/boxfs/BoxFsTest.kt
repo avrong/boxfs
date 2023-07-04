@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectory
@@ -296,8 +297,7 @@ class BoxFsTest {
     @Test
     fun testPopulation() {
         val boxFs = BoxFs.create(tempDir.resolve("population"))
-        val localPath = Path.of(BoxFsTest::class.java.getResource("/test/bands")!!.path)
-
+        val localPath = File(BoxFsTest::class.java.getResource("/test/bands/")!!.file).toPath() // Windows-compatible
         boxFs.populate(localPath, BoxPath("/"))
         assertTrue(boxFs.exists("/rock".toBoxPath()))
         assertTrue(boxFs.exists("/rock/punk/paramore.txt".toBoxPath()))
@@ -310,7 +310,7 @@ class BoxFsTest {
     @Test
     fun testPopulationAndTreeVisitor() {
         val boxFs = BoxFs.create(tempDir.resolve("population_tree"))
-        val testResourcesPath = Path.of(BoxFsTest::class.java.getResource("/test")!!.path)
+        val testResourcesPath = File(BoxFsTest::class.java.getResource("/test/")!!.file).toPath() // Windows-compatible
         val localPath = testResourcesPath.resolve("bands/")
         val expectedTree = testResourcesPath.resolve("bands-tree.txt").readText()
 
@@ -319,7 +319,8 @@ class BoxFsTest {
 
         val visualTree = boxFs.getVisualTree(rootPath)
 
-        assertEquals(expectedTree, visualTree)
+        // Make set out of lines so that directory entries order doesn't affect assertion
+        assertEquals(expectedTree.lines().toSet(), visualTree.lines().toSet())
     }
 
     @Test
@@ -329,7 +330,7 @@ class BoxFsTest {
         outputPath.createDirectory()
 
         // Populate into container
-        val testBandsPath = Path.of(BoxFsTest::class.java.getResource("/test/bands")!!.path)
+        val testBandsPath = File(BoxFsTest::class.java.getResource("/test/bands")!!.file).toPath() // Windows-compatible
         boxFs.populate(testBandsPath, "/".toBoxPath())
 
         // Materialize it back

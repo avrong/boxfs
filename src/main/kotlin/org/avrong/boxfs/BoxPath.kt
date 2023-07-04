@@ -9,7 +9,7 @@ class BoxPath(val pathList: List<String>) {
     val depth: Int
         get() = pathList.size
 
-    constructor(path: String) : this(path.trimStart('/').split('/').dropLastWhile { it == "" }) // Workaround so .split() doesn't create [""] on ""
+    constructor(path: String) : this(toPathList(path))
 
     fun last(): String {
         return pathList.lastOrNull() ?: throw IndexOutOfBoundsException("Path has no elements")
@@ -47,5 +47,14 @@ class BoxPath(val pathList: List<String>) {
 
     override fun hashCode(): Int {
         return pathList.hashCode()
+    }
+
+    companion object {
+        private fun toPathList(path: String): List<String> {
+            return path.replace("\\", "/")
+                .trimStart('/') // Workaround so .split() doesn't create [""] on ""
+                .split('/')
+                .dropLastWhile { it == "" }
+        }
     }
 }
