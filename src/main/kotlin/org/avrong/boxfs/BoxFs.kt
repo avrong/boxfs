@@ -8,6 +8,7 @@ import org.avrong.boxfs.container.Container
 import org.avrong.boxfs.container.Space
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createFile
 import kotlin.math.min
@@ -37,6 +38,20 @@ class BoxFs private constructor(
         availableBlock.appendEntry(directoryBlockEntry)
 
         return true
+    }
+
+    fun createDirectories(path: BoxPath): Boolean {
+        var currentPath = BoxPath("/")
+        var isSuccess = false
+        for (part in path.pathList) {
+            currentPath = currentPath.with(part)
+
+            if (!exists(currentPath)) {
+                isSuccess = createDirectory(currentPath)
+            }
+        }
+
+        return isSuccess
     }
 
     fun listDirectory(path: BoxPath): List<BoxPath>? {
@@ -275,6 +290,16 @@ class BoxFs private constructor(
 
         writeDirectoryEntries(directoryBlock, updatedDirectoryEntries)
         return true
+    }
+
+    fun populate(path: Path, internalPath: BoxPath) {
+        // Takes children of `path` and puts into `internalPath`
+        val visitor = PopulateFileVisitor(this, path)
+        Files.walkFileTree(path, visitor)
+    }
+
+    fun visitFileTree(path: Path, visitor: BoxFsVisitor) {
+
     }
 
     private fun updateSymbol(symbolBlock: SymbolBlock, name: String): SymbolBlock {

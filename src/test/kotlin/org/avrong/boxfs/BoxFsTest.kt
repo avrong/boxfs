@@ -105,6 +105,20 @@ class BoxFsTest {
     }
 
     @Test
+    fun testCreateDirectories() {
+        val boxFs = BoxFs.create(tempDir.resolve("create_dirs"))
+
+        boxFs.createDirectory(BoxPath("/1"))
+        boxFs.createDirectory(BoxPath("/1/2"))
+
+        val dirPath = BoxPath("/1/2/3/4/5/6/7/8/9/10")
+        boxFs.createDirectories(dirPath)
+
+        assertTrue(boxFs.exists(dirPath))
+        assertEquals(listOf(dirPath), boxFs.listDirectory(dirPath.withoutLast()))
+    }
+
+    @Test
     fun testCreateFile() {
         val boxFs = BoxFs.create(tempDir.resolve("create_file"))
 
@@ -274,6 +288,20 @@ class BoxFsTest {
         assertFalse(boxFs.exists(BoxPath("/2")))
         assertTrue(boxFs.exists(BoxPath("/5/2")))
         assertTrue(boxFs.exists(BoxPath("/5/2/3")))
+    }
+
+    @Test
+    fun testPopulation() {
+        val boxFs = BoxFs.create(tempDir.resolve("population"))
+        val localPath = Path.of(BoxFsTest::class.java.getResource("/test/bands")!!.path)
+
+        boxFs.populate(localPath, BoxPath("/"))
+        assertTrue(boxFs.exists("/rock".toBoxPath()))
+        assertTrue(boxFs.exists("/rock/punk/paramore.txt".toBoxPath()))
+        assertEquals(
+            "It's something unpredictable, but in the end it's right. I hope you had the time of your life",
+            String(boxFs.readFile("/rock/punk/greenday.txt".toBoxPath())!!)
+        )
     }
 
     /*

@@ -30,6 +30,8 @@ class BoxPath(val pathList: List<String>) {
         return BoxPath(pathList + path.pathList)
     }
 
+    fun isEmpty(): Boolean = pathList.isEmpty()
+
     override fun toString(): String = pathList.joinToString("/", "/")
 
     override fun equals(other: Any?): Boolean {
