@@ -173,6 +173,8 @@ class BoxFs private constructor(
     }
 
     fun exists(path: BoxPath): Boolean {
+        if (path.pathList.isEmpty()) return true
+
         val directoryPath = path.withoutLast()
         val entryName = path.last()
 

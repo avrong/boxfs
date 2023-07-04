@@ -5,8 +5,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.assertContentEquals
@@ -34,6 +32,18 @@ class BoxFsTest {
         val boxFs = BoxFs.create(tempDir.resolve("init"))
         val rootPath = BoxPath("/")
         assertEquals(emptyList(), boxFs.listDirectory(rootPath))
+    }
+
+    @Test
+    fun testInitOpen() {
+        val containerPath = tempDir.resolve("init_open_test")
+        val boxFs = BoxFs.create(containerPath)
+        val rootPath = BoxPath("/")
+        boxFs.close()
+
+        val openedBoxFs = BoxFs.open(containerPath)
+        assertTrue(openedBoxFs.exists(rootPath))
+        assertEquals(emptyList(), openedBoxFs.listDirectory(rootPath))
     }
 
     @Test

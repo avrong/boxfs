@@ -13,7 +13,11 @@ class BoxPath(val pathList: List<String>) {
         return pathList.lastOrNull() ?: throw IndexOutOfBoundsException("Path has no elements")
     }
 
-    fun withoutLast(): BoxPath = BoxPath(pathList.subList(0, pathList.size - 1))
+    fun withoutLast(): BoxPath {
+        if (pathList.isEmpty()) throw IndexOutOfBoundsException("Path has no elements")
+
+        return BoxPath(pathList.subList(0, pathList.size - 1))
+    }
 
     fun with(dirName: String): BoxPath {
         assert(!dirName.contains("/")) { "Dir name cannot contain slashes"}
