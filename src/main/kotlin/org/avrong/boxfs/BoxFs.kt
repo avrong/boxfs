@@ -298,7 +298,7 @@ class BoxFs private constructor(
 
     fun populate(path: Path, internalPath: BoxPath) {
         // Takes children of `path` and puts into `internalPath`
-        val visitor = PopulateFileVisitor(this, path)
+        val visitor = PopulateFileVisitor(this, path, internalPath)
         Files.walkFileTree(path, visitor)
     }
 

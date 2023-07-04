@@ -9,7 +9,7 @@ import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 import kotlin.io.path.readBytes
 
-class PopulateFileVisitor(val boxFs: BoxFs, val prefix: Path) : SimpleFileVisitor<Path>() {
+class PopulateFileVisitor(val boxFs: BoxFs, val prefix: Path, val internalPath: BoxPath) : SimpleFileVisitor<Path>() {
     override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
         val convertedPath = convertPath(file)
 
@@ -29,6 +29,7 @@ class PopulateFileVisitor(val boxFs: BoxFs, val prefix: Path) : SimpleFileVisito
     }
 
     private fun convertPath(path: Path): BoxPath {
-        return path.toString().removePrefix(prefix.toString()).toBoxPath()
+        val withoutPrefix = path.toString().removePrefix(prefix.toString()).toBoxPath()
+        return internalPath.withPath(withoutPrefix)
     }
 }
