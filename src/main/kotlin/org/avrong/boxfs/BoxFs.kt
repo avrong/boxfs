@@ -298,10 +298,6 @@ class BoxFs private constructor(
         Files.walkFileTree(path, visitor)
     }
 
-    fun visitFileTree(path: Path, visitor: BoxFsVisitor) {
-
-    }
-
     private fun updateSymbol(symbolBlock: SymbolBlock, name: String): SymbolBlock {
         return if (symbolBlock.checkStringFits(name)) {
             symbolBlock.string = name
