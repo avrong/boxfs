@@ -172,6 +172,24 @@ class BoxFs private constructor(
         return size
     }
 
+    fun exists(path: BoxPath): Boolean {
+        val directoryPath = path.withoutLast()
+        val entryName = path.last()
+
+        val directoryBlock = getDirectoryBlockByPath(directoryPath) ?: return false
+        val directoryEntries = getAllDirectoryEntries(directoryBlock)
+
+        for ((symbolOffset, _) in directoryEntries) {
+            val name = container.getSymbolBlock(symbolOffset).string
+
+            if (name == entryName) {
+                return true
+            }
+        }
+
+        return false
+    }
+
     private fun findAvailableDirectoryBlock(directoryBlock: DirectoryBlock): DirectoryBlock {
         // Try to find an available block
         var availableBlock: DirectoryBlock

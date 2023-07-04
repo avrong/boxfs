@@ -163,6 +163,21 @@ class BoxFsTest {
         assertContentEquals(content[2].toByteArray(), boxFs.readFile(filePath))
     }
 
+    @Test
+    fun testExists() {
+        val boxFs = BoxFs.create(tempDir.resolve("exists"))
+
+        boxFs.createDirectory(BoxPath("/1"))
+        boxFs.createDirectory(BoxPath("/1/2"))
+        boxFs.createDirectory(BoxPath("/1/2/3"))
+
+        boxFs.createFile(BoxPath("/1/5"))
+
+        assertTrue(boxFs.exists(BoxPath("/1/2/3")))
+        assertTrue(boxFs.exists(BoxPath("/1/5")))
+        assertFalse(boxFs.exists(BoxPath("/1/3")))
+    }
+
     /*
     TODO: Complete functional test
      - store all project trees
