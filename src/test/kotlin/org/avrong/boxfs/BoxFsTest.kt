@@ -20,7 +20,7 @@ class BoxFsTest {
 
         @JvmStatic
         @BeforeAll
-        fun beforeAll(): Unit {
+        fun beforeAll() {
             tempDir = Files.createTempDirectory(null)
         }
 
@@ -362,18 +362,6 @@ class BoxFsTest {
             String(boxFs.readFile("/rock/punk/greenday.txt".toBoxPath())!!)
         )
 
-        // Make set out of lines so that directory entries order doesn't affect assertion
         assertEquals(expectedTree, boxFs.getVisualTree(rootPath))
     }
-
-    /*
-    TODO: Complete functional test
-     - store all project trees
-     - erase 70% of files
-     - compact containers
-     - add all files back into new dirs
-     - close container
-     - reopen
-     - verify all content
-    */
 }
