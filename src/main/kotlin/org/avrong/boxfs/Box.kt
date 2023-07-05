@@ -3,6 +3,8 @@ package org.avrong.boxfs
 import org.avrong.boxfs.visitor.BoxFsVisitor
 import java.nio.file.Path
 
+// Fs methods
+
 interface Box {
     // Both files and dirs
     fun exists(path: BoxPath): Boolean
@@ -10,6 +12,8 @@ interface Box {
     fun delete(path: BoxPath): Boolean
     fun rename(pathFrom: BoxPath, pathTo: BoxPath): Boolean
     fun copy(pathFrom: BoxPath, pathTo: BoxPath): Boolean
+    fun isDirectory(path: BoxPath): Boolean
+    fun isFile(path: BoxPath): Boolean
 
     // Dirs only
     fun createDirectory(path: BoxPath): Boolean

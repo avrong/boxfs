@@ -230,14 +230,14 @@ class BoxFs private constructor(
     /**
      * Check if `path` is a directory. Returns `false` if it is not or `path` does not exist.
      */
-    fun isDirectory(path: BoxPath): Boolean = checkEntryForPath(path, true) {
+    override fun isDirectory(path: BoxPath): Boolean = checkEntryForPath(path, true) {
         container.getBlockType(it) == BlockType.DIRECTORY
     }
 
     /**
      * Check if `path` is a file. Returns `false` if it is not or `path` does not exist.
      */
-    fun isFile(path: BoxPath): Boolean = checkEntryForPath(path, false) {
+    override fun isFile(path: BoxPath): Boolean = checkEntryForPath(path, false) {
         container.getBlockType(it) == BlockType.FILE
     }
 
