@@ -335,6 +335,7 @@ class BoxFs private constructor(
         val basicCompactionVisitor = BasicCompactionVisitor(currentBoxFs, newBoxFs)
         currentBoxFs.visitFileTree(BoxPath("/"), basicCompactionVisitor)
 
+        currentBoxFs.close()
         changedName.deleteExisting()
 
         // Set new container
