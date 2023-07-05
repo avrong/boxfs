@@ -25,7 +25,6 @@ internal class PopulateFileVisitor(private val boxFs: BoxFs, private val prefix:
             println(e)
         }
 
-
         return super.visitFile(file, attrs)
     }
 
