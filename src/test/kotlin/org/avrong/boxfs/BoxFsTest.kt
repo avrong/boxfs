@@ -343,6 +343,29 @@ class BoxFsTest {
         assertContentEquals(boxFs.readFile(bonIverPath.toBoxPath()), outputPath.resolve(bonIverPath).readBytes())
     }
 
+    @Test
+    fun testCompaction() {
+        val boxFs = BoxFs.create(tempDir.resolve("compaction"))
+        val localPath = File(BoxFsTest::class.java.getResource("/test/bands/")!!.file).toPath() // Windows-compatible
+
+        val rootPath = BoxPath("/")
+        boxFs.populate(localPath, rootPath)
+        val expectedTree = boxFs.getVisualTree(rootPath)
+
+        // Compact
+        boxFs.compact()
+
+        assertTrue(boxFs.exists("/rock".toBoxPath()))
+        assertTrue(boxFs.exists("/rock/punk/paramore.txt".toBoxPath()))
+        assertEquals(
+            "It's something unpredictable, but in the end it's right. I hope you had the time of your life",
+            String(boxFs.readFile("/rock/punk/greenday.txt".toBoxPath())!!)
+        )
+
+        // Make set out of lines so that directory entries order doesn't affect assertion
+        assertEquals(expectedTree, boxFs.getVisualTree(rootPath))
+    }
+
     /*
     TODO: Complete functional test
      - store all project trees

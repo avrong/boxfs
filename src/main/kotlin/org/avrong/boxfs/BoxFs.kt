@@ -7,6 +7,7 @@ import org.avrong.boxfs.block.SymbolBlock
 import org.avrong.boxfs.container.Container
 import org.avrong.boxfs.container.Space
 import org.avrong.boxfs.population.PopulateFileVisitor
+import org.avrong.boxfs.visitor.BasicCompactionVisitor
 import org.avrong.boxfs.visitor.BoxFsVisitor
 import org.avrong.boxfs.visitor.MaterializeVisitor
 import org.avrong.boxfs.visitor.VisualTreeVisitor
@@ -15,14 +16,15 @@ import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createFile
+import kotlin.io.path.deleteExisting
 import kotlin.math.min
 
 class BoxFs private constructor(
     val path: Path,
-    val container: Container
-) : AutoCloseable {
+    private var container: Container
+) : Box, AutoCloseable {
 
-    fun createDirectory(path: BoxPath): Boolean {
+    override fun createDirectory(path: BoxPath): Boolean {
         // TODO: Make a Directory abstraction so that it handles blocks, expansion and data gathering
         val directoryBlock = getDirectoryBlockByPath(path.withoutLast()) ?: return false
         val directoryEntries = getAllDirectoryEntries(directoryBlock).map { (nameOffset, _) ->
@@ -44,7 +46,7 @@ class BoxFs private constructor(
         return true
     }
 
-    fun createDirectories(path: BoxPath): Boolean {
+    override fun createDirectories(path: BoxPath): Boolean {
         var currentPath = BoxPath("/")
         var isSuccess = false
         for (part in path.pathList) {
@@ -58,7 +60,7 @@ class BoxFs private constructor(
         return isSuccess
     }
 
-    fun listDirectory(path: BoxPath): List<BoxPath>? {
+    override fun listDirectory(path: BoxPath): List<BoxPath>? {
         val directoryBlock = getDirectoryBlockByPath(path) ?: return null
         return getAllDirectoryEntries(directoryBlock).map { (nameOffset, _) ->
             val name = container.getSymbolBlock(nameOffset).string
@@ -66,7 +68,7 @@ class BoxFs private constructor(
         }
     }
 
-    fun createFile(path: BoxPath): Boolean {
+    override fun createFile(path: BoxPath): Boolean {
         val directoryPath = path.withoutLast()
         val fileName = path.last()
         val directoryBlock = getDirectoryBlockByPath(directoryPath) ?: return false
@@ -88,7 +90,7 @@ class BoxFs private constructor(
         return true
     }
 
-    fun writeFile(path: BoxPath, byteArray: ByteArray): Boolean {
+    override fun writeFile(path: BoxPath, byteArray: ByteArray): Boolean {
         val targetFileBlock = getFileBlockByPath(path) ?: return false
 
         val byteArrayStream = ByteArrayInputStream(byteArray)
@@ -121,7 +123,7 @@ class BoxFs private constructor(
         return true
     }
 
-    fun appendFile(path: BoxPath, byteArray: ByteArray): Boolean {
+    override fun appendFile(path: BoxPath, byteArray: ByteArray): Boolean {
         val targetFileBlock = getFileBlockByPath(path) ?: return false
 
         val byteArrayStream = ByteArrayInputStream(byteArray)
@@ -155,7 +157,7 @@ class BoxFs private constructor(
         return true
     }
 
-    fun readFile(path: BoxPath): ByteArray? {
+    override fun readFile(path: BoxPath): ByteArray? {
         val targetFileBlock = getFileBlockByPath(path) ?: return null
 
         val byteStream = ByteArrayOutputStream()
@@ -173,7 +175,7 @@ class BoxFs private constructor(
         return byteStream.toByteArray()
     }
 
-    fun getFileSize(path: BoxPath): Int? {
+    override fun getFileSize(path: BoxPath): Int? {
         val targetFileBlock = getFileBlockByPath(path) ?: return null
 
         var size = 0
@@ -191,7 +193,7 @@ class BoxFs private constructor(
         return size
     }
 
-    fun exists(path: BoxPath): Boolean {
+    override fun exists(path: BoxPath): Boolean {
         if (path.pathList.isEmpty()) return true
 
         val directoryPath = path.withoutLast()
@@ -211,7 +213,7 @@ class BoxFs private constructor(
         return false
     }
 
-    fun delete(path: BoxPath): Boolean {
+    override fun delete(path: BoxPath): Boolean {
         val directoryPath = path.withoutLast()
         val elementName = path.last()
 
@@ -230,7 +232,7 @@ class BoxFs private constructor(
         return true
     }
 
-    fun move(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
+    override fun move(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
         val fromDirectoryPath = pathFrom.withoutLast()
         val fromElementName = pathFrom.last()
         val toDirectoryPath = pathTo.withoutLast()
@@ -264,7 +266,7 @@ class BoxFs private constructor(
         return true
     }
 
-    fun rename(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
+    override fun rename(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
         val fromDirectoryPath = pathFrom.withoutLast()
         val toDirectoryPath = pathTo.withoutLast()
 
@@ -296,15 +298,19 @@ class BoxFs private constructor(
         return true
     }
 
-    fun populate(path: Path, internalPath: BoxPath) {
+    override fun populate(path: Path, internalPath: BoxPath) {
         // Takes children of `path` and puts into `internalPath`
         val visitor = PopulateFileVisitor(this, path, internalPath)
         Files.walkFileTree(path, visitor)
     }
 
-    fun materialize(internalDirPath: BoxPath, outputDirPath: Path) {
+    override fun materialize(internalDirPath: BoxPath, outputDirPath: Path) {
         val materializeVisitor = MaterializeVisitor(this, outputDirPath)
         visitFileTree(internalDirPath, materializeVisitor)
+    }
+
+    override fun visitFileTree(dirPath: BoxPath, visitor: BoxFsVisitor) {
+        recursiveDirectoryVisitor(dirPath, visitor)
     }
 
     fun getVisualTree(dirPath: BoxPath): String {
@@ -313,8 +319,27 @@ class BoxFs private constructor(
         return visualTreeVisitor.visualTree
     }
 
-    fun visitFileTree(dirPath: BoxPath, visitor: BoxFsVisitor) {
-        recursiveDirectoryVisitor(dirPath, visitor)
+    fun compact() {
+        container.close()
+
+        // Change name so we can init a new one
+        val currentFile = path.toFile()
+        val changedName = Path.of(path.parent.toString(), currentFile.name + ".old")
+        currentFile.renameTo(changedName.toFile())
+        val currentBoxFs = open(changedName)
+
+        // Create new file in-place of old one
+        val newBoxFs = create(path)
+
+        // Visit everything in first container and put to the other
+        val basicCompactionVisitor = BasicCompactionVisitor(currentBoxFs, newBoxFs)
+        currentBoxFs.visitFileTree(BoxPath("/"), basicCompactionVisitor)
+
+        changedName.deleteExisting()
+
+        // Set new container
+        val space = Space.fromPath(path)
+        container = Container.fromSpace(space)
     }
 
     private fun recursiveDirectoryVisitor(dirPath: BoxPath, visitor: BoxFsVisitor) {
