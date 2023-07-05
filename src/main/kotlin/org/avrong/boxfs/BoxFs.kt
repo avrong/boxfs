@@ -16,11 +16,18 @@ import kotlin.io.path.createFile
 import kotlin.io.path.deleteExisting
 import kotlin.math.min
 
+/**
+ * Box filesystem representation. Implements basic file and directory operations.
+ * There is a root directory by default.
+ */
 class BoxFs private constructor(
     val path: Path,
     private var container: Container
 ) : Box, AutoCloseable {
 
+    /**
+     * Creates a new directory.
+     */
     override fun createDirectory(path: BoxPath): Boolean {
         // TODO: Make a Directory abstraction so that it handles blocks, expansion and data gathering
         val directoryBlock = getDirectoryBlockByPath(path.withoutLast()) ?: return false
@@ -43,6 +50,9 @@ class BoxFs private constructor(
         return true
     }
 
+    /**
+     * Creates a new directory by creating all non-existent parent directories first.
+     */
     override fun createDirectories(path: BoxPath): Boolean {
         var currentPath = BoxPath("/")
         var isSuccess = false
@@ -57,6 +67,9 @@ class BoxFs private constructor(
         return isSuccess
     }
 
+    /**
+     * Returns the list of the `path` directory. If `path` is not a directory, returns null.
+     */
     override fun listDirectory(path: BoxPath): List<BoxPath>? {
         val directoryBlock = getDirectoryBlockByPath(path) ?: return null
         return getAllDirectoryEntries(directoryBlock).map { (nameOffset, _) ->
@@ -65,6 +78,10 @@ class BoxFs private constructor(
         }
     }
 
+    /**
+     * Creates an empty file in `path`. Returns `true` if succeeded, and `false` if either `path` does not exist,
+     * or there is already an entry with such name.
+     */
     override fun createFile(path: BoxPath): Boolean {
         val directoryPath = path.withoutLast()
         val fileName = path.last()
@@ -87,6 +104,10 @@ class BoxFs private constructor(
         return true
     }
 
+    /**
+     * Writes `byteArray` to the file in `path`. Returns `true` if succeeded, and `false` if `path`
+     * does not exist.
+     */
     override fun writeFile(path: BoxPath, byteArray: ByteArray): Boolean {
         val targetFileBlock = getFileBlockByPath(path) ?: return false
 
@@ -120,6 +141,10 @@ class BoxFs private constructor(
         return true
     }
 
+    /**
+     * Appends file in `path` with `byteArray`. Returns `true` if succeeded, and `false` if `path`
+     * does not exist.
+     */
     override fun appendFile(path: BoxPath, byteArray: ByteArray): Boolean {
         val targetFileBlock = getFileBlockByPath(path) ?: return false
 
@@ -154,6 +179,10 @@ class BoxFs private constructor(
         return true
     }
 
+    /**
+     * Reads file contents to `ByteArray`. Returns `true` if succeeded, and `false` if `path`
+     * does not exist.
+     */
     override fun readFile(path: BoxPath): ByteArray? {
         val targetFileBlock = getFileBlockByPath(path) ?: return null
 
@@ -172,6 +201,9 @@ class BoxFs private constructor(
         return byteStream.toByteArray()
     }
 
+    /**
+     * Gets file size in bytes. Returns `null` if `path` does not exist.
+     */
     override fun getFileSize(path: BoxPath): Int? {
         val targetFileBlock = getFileBlockByPath(path) ?: return null
 
@@ -190,17 +222,26 @@ class BoxFs private constructor(
         return size
     }
 
+    /**
+     * Check for path existence.
+     */
     override fun exists(path: BoxPath): Boolean = checkEntryForPath(path, true) { true }
 
+    /**
+     * Check if `path` is a directory. Returns `false` if it is not or `path` does not exist.
+     */
     fun isDirectory(path: BoxPath): Boolean = checkEntryForPath(path, true) {
         container.getBlockType(it) == BlockType.DIRECTORY
     }
 
+    /**
+     * Check if `path` is a file. Returns `false` if it is not or `path` does not exist.
+     */
     fun isFile(path: BoxPath): Boolean = checkEntryForPath(path, false) {
         container.getBlockType(it) == BlockType.FILE
     }
 
-    fun checkEntryForPath(path: BoxPath, onEmptyPath: Boolean, check: (blockOffset: Long) -> Boolean): Boolean {
+    private fun checkEntryForPath(path: BoxPath, onEmptyPath: Boolean, check: (blockOffset: Long) -> Boolean): Boolean {
         if (path.pathList.isEmpty()) return onEmptyPath
 
         val directoryPath = path.withoutLast()
@@ -220,6 +261,9 @@ class BoxFs private constructor(
         return false
     }
 
+    /**
+     * Delete the entry in `path`. Returns `true` if succeeded, and `false` if such `path` does not exist.
+     */
     override fun delete(path: BoxPath): Boolean {
         val directoryPath = path.withoutLast()
         val elementName = path.last()
@@ -239,6 +283,10 @@ class BoxFs private constructor(
         return true
     }
 
+    /**
+     * Move the entry in `pathFrom` to `pathTo`. In case of directory, it will be copied recursively.
+     * Returns `true` if succeeded, and `false` if either `path` does not exist.
+     */
     override fun move(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
         val fromDirectoryPath = pathFrom.withoutLast()
         val fromElementName = pathFrom.last()
@@ -273,7 +321,11 @@ class BoxFs private constructor(
         return true
     }
 
-    fun copy(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
+    /**
+     * Copy the entry in `pathFrom` to `pathTo`.
+     * Returns `true` if succeeded, and `false` if either `path` does not exist.
+     */
+    override fun copy(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
         if (isDirectory(pathFrom)) {
             createDirectory(pathTo)
             val visitor = RecursiveCopyVisitor(this, pathFrom, pathTo)
@@ -288,6 +340,11 @@ class BoxFs private constructor(
         return false
     }
 
+    /**
+     * Rename the entry in `pathFrom` to `pathTo`.
+     * Returns `true` if succeeded, and `false` if either `path` does not exist,
+     * or parents for paths differ.
+     */
     override fun rename(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
         val fromDirectoryPath = pathFrom.withoutLast()
         val toDirectoryPath = pathTo.withoutLast()
@@ -320,27 +377,42 @@ class BoxFs private constructor(
         return true
     }
 
+    /**
+     * Upload entries of local `path` to the box, putting them in `internalPath`.
+     */
     override fun populate(path: Path, internalPath: BoxPath) {
         // Takes children of `path` and puts into `internalPath`
         val visitor = PopulateFileVisitor(this, path, internalPath)
         Files.walkFileTree(path, visitor)
     }
 
+    /**
+     * Download entries of `internalDirPath` from the box, putting them in local `outputDirPath`.
+     */
     override fun materialize(internalDirPath: BoxPath, outputDirPath: Path) {
         val materializeVisitor = MaterializeVisitor(this, outputDirPath)
         visitFileTree(internalDirPath, materializeVisitor)
     }
 
+    /**
+     * Visit file tree recursively using `visitor` starting from `dirPath`.
+     */
     override fun visitFileTree(dirPath: BoxPath, visitor: BoxFsVisitor) {
         recursiveDirectoryVisitor(dirPath, visitor)
     }
 
+    /**
+     * Get visual tree representation of `dirPath` subdirs and files. Like `tree` utility in Linux.
+     */
     fun getVisualTree(dirPath: BoxPath): String {
         val visualTreeVisitor = VisualTreeVisitor()
         visitFileTree(dirPath, visualTreeVisitor)
         return visualTreeVisitor.visualTree
     }
 
+    /**
+     * Compact the container. In process, will create a new file with compacted file tree.
+     */
     fun compact() {
         container.close()
 

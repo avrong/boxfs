@@ -2,6 +2,9 @@ package org.avrong.boxfs
 
 import java.nio.file.Path
 
+/**
+ * Box internal path representation.
+ */
 class BoxPath(val pathList: List<String>) {
     // TODO: There is probably need to forbid directory names . and .. as they are used in regular filesystems to
     //  navigate dir tree
@@ -18,27 +21,45 @@ class BoxPath(val pathList: List<String>) {
 
     constructor(path: String) : this(toPathList(path))
 
+    /**
+     * Get last path's entry. For file path it will be a filename.
+     */
     fun last(): String {
         return pathList.lastOrNull() ?: throw IndexOutOfBoundsException("Path has no elements")
     }
 
+    /**
+     * Get parent dir, or path without last entry.
+     */
     fun withoutLast(): BoxPath {
         if (pathList.isEmpty()) throw IndexOutOfBoundsException("Path has no elements")
 
         return BoxPath(pathList.subList(0, pathList.size - 1))
     }
 
+    /**
+     * Append path with a directory `name`.
+     */
     fun with(dirName: String): BoxPath {
         if (dirName.contains("/")) throw IllegalArgumentException("Dir name cannot contain /")
         return BoxPath(pathList + listOf(dirName))
     }
 
+    /**
+     * Append path with another path.
+     */
     fun withPath(path: String) = withPath(BoxPath(path))
 
+    /**
+     * Append path with another path.
+     */
     fun withPath(path: BoxPath): BoxPath {
         return BoxPath(pathList + path.pathList)
     }
 
+    /**
+     * Remove path prefix using another path.
+     */
     fun removePrefix(prefix: BoxPath): BoxPath {
         val path = pathList.withIndex().dropWhile { (i, v) -> v == prefix.pathList.getOrNull(i) }.map { it.value }
         return BoxPath(path)
