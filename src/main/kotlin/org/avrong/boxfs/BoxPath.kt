@@ -32,6 +32,11 @@ class BoxPath(val pathList: List<String>) {
         return BoxPath(pathList + path.pathList)
     }
 
+    fun removePrefix(prefix: BoxPath): BoxPath {
+        val path = pathList.withIndex().dropWhile { (i, v) -> v == prefix.pathList.getOrNull(i) }.map { it.value }
+        return BoxPath(path)
+    }
+
     fun isEmpty(): Boolean = pathList.isEmpty()
 
     fun toPath(): Path = Path.of(pathList.joinToString("/"))

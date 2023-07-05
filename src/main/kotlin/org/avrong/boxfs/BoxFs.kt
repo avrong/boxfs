@@ -190,8 +190,18 @@ class BoxFs private constructor(
         return size
     }
 
-    override fun exists(path: BoxPath): Boolean {
-        if (path.pathList.isEmpty()) return true
+    override fun exists(path: BoxPath): Boolean = checkEntryForPath(path, true) { true }
+
+    fun isDirectory(path: BoxPath): Boolean = checkEntryForPath(path, true) {
+        container.getBlockType(it) == BlockType.DIRECTORY
+    }
+
+    fun isFile(path: BoxPath): Boolean = checkEntryForPath(path, false) {
+        container.getBlockType(it) == BlockType.FILE
+    }
+
+    fun checkEntryForPath(path: BoxPath, onEmptyPath: Boolean, check: (blockOffset: Long) -> Boolean): Boolean {
+        if (path.pathList.isEmpty()) return onEmptyPath
 
         val directoryPath = path.withoutLast()
         val entryName = path.last()
@@ -199,11 +209,11 @@ class BoxFs private constructor(
         val directoryBlock = getDirectoryBlockByPath(directoryPath) ?: return false
         val directoryEntries = getAllDirectoryEntries(directoryBlock)
 
-        for ((symbolOffset, _) in directoryEntries) {
+        for ((symbolOffset, blockOffset) in directoryEntries) {
             val name = container.getSymbolBlock(symbolOffset).string
 
             if (name == entryName) {
-                return true
+                return check(blockOffset)
             }
         }
 
@@ -261,6 +271,21 @@ class BoxFs private constructor(
         availableBlock.appendEntry(elementToMove.copy(nameOffset = updatedSymbol.offset))
 
         return true
+    }
+
+    fun copy(pathFrom: BoxPath, pathTo: BoxPath): Boolean {
+        if (isDirectory(pathFrom)) {
+            createDirectory(pathTo)
+            val visitor = RecursiveCopyVisitor(this, pathFrom, pathTo)
+            visitFileTree(pathFrom, visitor)
+            return true
+        } else if (isFile(pathFrom)) {
+            val bytes = readFile(pathFrom)!!
+            createFile(pathTo)
+            return writeFile(pathTo, bytes)
+        }
+
+        return false
     }
 
     override fun rename(pathFrom: BoxPath, pathTo: BoxPath): Boolean {

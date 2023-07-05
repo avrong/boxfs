@@ -295,6 +295,41 @@ class BoxFsTest {
     }
 
     @Test
+    fun testCopy() {
+        val boxFs = BoxFs.create(tempDir.resolve("copy"))
+
+        val dirs = listOf("/1", "/2", "/2/3", "/2/4", "/5", "/5/6", "/5/6/7").map { BoxPath(it) }
+        val files = listOf("/1/a", "/2/b", "/c", "/5/6/d").map { BoxPath(it) }
+
+        boxFs.writeFile(BoxPath("/5/6/d"), "hello".toByteArray())
+
+        dirs.forEach { boxFs.createDirectory(it) }
+        files.forEach { boxFs.createFile(it) }
+
+        // Copy dir
+        boxFs.copy(BoxPath("/2"), BoxPath("/5/42"))
+
+        // Check copied dir
+        assertTrue(boxFs.exists(BoxPath("/2")))
+        assertTrue(boxFs.isDirectory(BoxPath("/5/42")))
+        assertTrue(boxFs.exists(BoxPath("/5/42")))
+        assertTrue(boxFs.exists(BoxPath("/5/42/3")))
+        assertTrue(boxFs.exists(BoxPath("/5/42/4")))
+        assertTrue(boxFs.exists(BoxPath("/5/42/b")))
+
+        // Copy file
+        val copyFromPath = BoxPath("/5/6/d")
+        val copyToPath = BoxPath("/5/6/7/k")
+        boxFs.copy(copyFromPath, copyToPath)
+
+        // Check copied file
+        assertTrue(boxFs.exists(copyFromPath))
+        assertTrue(boxFs.exists(copyToPath))
+        assertTrue(boxFs.isFile(copyToPath))
+        assertContentEquals(boxFs.readFile(copyFromPath), boxFs.readFile(copyToPath))
+    }
+
+    @Test
     fun testPopulation() {
         val boxFs = BoxFs.create(tempDir.resolve("population"))
         val localPath = getResource("/test/bands")
@@ -368,5 +403,5 @@ class BoxFsTest {
     /**
      * Get resource (with Windows path workaround)
      */
-    fun getResource(path: String) = File(BoxFsTest::class.java.getResource(path)!!.file).toPath()
+    private fun getResource(path: String): Path = File(BoxFsTest::class.java.getResource(path)!!.file).toPath()
 }
