@@ -11,7 +11,7 @@ import java.nio.file.attribute.BasicFileAttributes
 import kotlin.io.path.pathString
 import kotlin.io.path.readBytes
 
-class PopulateFileVisitor(val boxFs: BoxFs, val prefix: Path, val internalPath: BoxPath) : SimpleFileVisitor<Path>() {
+internal class PopulateFileVisitor(private val boxFs: BoxFs, private val prefix: Path, private val internalPath: BoxPath) : SimpleFileVisitor<Path>() {
     override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
         val convertedPath = convertPath(file)
 

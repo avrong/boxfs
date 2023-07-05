@@ -2,7 +2,7 @@ package org.avrong.boxfs.visitor
 
 import org.avrong.boxfs.BoxPath
 
-class VisualTreeVisitor : BoxFsVisitor {
+internal class VisualTreeVisitor : BoxFsVisitor {
     private val stringBuilder: StringBuilder = StringBuilder()
     private var level: Int = 0
 

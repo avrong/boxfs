@@ -2,7 +2,7 @@ package org.avrong.boxfs.container
 
 import org.avrong.boxfs.block.*
 
-class Container private constructor (private val space: Space) : AutoCloseable {
+internal class Container private constructor (private val space: Space) : AutoCloseable {
     val firstBlock: FirstBlock
         get() {
             val rangedSpace = rangedSpaceForBlock(0)

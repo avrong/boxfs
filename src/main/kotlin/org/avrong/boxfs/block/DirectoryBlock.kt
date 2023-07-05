@@ -3,7 +3,7 @@ package org.avrong.boxfs.block
 import org.avrong.boxfs.container.RangedSpace
 import kotlin.math.max
 
-class DirectoryBlock(rangedSpace: RangedSpace) : Block(BlockType.DIRECTORY, rangedSpace) {
+internal class DirectoryBlock(rangedSpace: RangedSpace) : Block(BlockType.DIRECTORY, rangedSpace) {
     override fun initBlockData() {
         nextBlockOffset = 0
         entryCount = 0

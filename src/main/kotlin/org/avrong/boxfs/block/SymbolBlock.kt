@@ -2,7 +2,7 @@ package org.avrong.boxfs.block
 
 import org.avrong.boxfs.container.RangedSpace
 
-class SymbolBlock(rangedSpace: RangedSpace) : Block(BlockType.SYMBOL, rangedSpace) {
+internal class SymbolBlock(rangedSpace: RangedSpace) : Block(BlockType.SYMBOL, rangedSpace) {
     override fun initBlockData() {
         stringBytesSize = 0
     }

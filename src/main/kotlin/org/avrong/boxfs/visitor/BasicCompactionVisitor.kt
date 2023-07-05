@@ -3,7 +3,7 @@ package org.avrong.boxfs.visitor
 import org.avrong.boxfs.BoxFs
 import org.avrong.boxfs.BoxPath
 
-class BasicCompactionVisitor(private val currentBoxFs: BoxFs, private val newBoxFs: BoxFs) : AbstractBoxFsVisitor() {
+internal class BasicCompactionVisitor(private val currentBoxFs: BoxFs, private val newBoxFs: BoxFs) : AbstractBoxFsVisitor() {
     override fun preVisitDirectory(dir: BoxPath): BoxFsVisitResult {
         newBoxFs.createDirectory(dir)
         return BoxFsVisitResult.CONTINUE

@@ -1,6 +1,6 @@
 package org.avrong.boxfs.block
 
-enum class BlockType {
+internal enum class BlockType {
     FIRST, SYMBOL, DIRECTORY, FILE;
 
     val byte: Byte get() = ordinal.toByte()

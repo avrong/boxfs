@@ -3,7 +3,7 @@ package org.avrong.boxfs.block
 import org.avrong.boxfs.container.RangedSpace
 import kotlin.math.max
 
-class FileBlock(rangedSpace: RangedSpace) : Block(BlockType.FILE, rangedSpace) {
+internal class FileBlock(rangedSpace: RangedSpace) : Block(BlockType.FILE, rangedSpace) {
     override fun initBlockData() {
         nextBlockOffset = 0
         contentSize = 0

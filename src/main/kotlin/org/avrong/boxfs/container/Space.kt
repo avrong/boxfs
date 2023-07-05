@@ -4,9 +4,8 @@ import java.io.RandomAccessFile
 import java.nio.file.Path
 import kotlin.io.path.exists
 
-class Space private constructor (private val randomAccessFile: RandomAccessFile) : AutoCloseable {
-    var position: Long = 0
-        private set
+internal class Space private constructor (private val randomAccessFile: RandomAccessFile) : AutoCloseable {
+    private var position: Long = 0
 
     var length: Long = randomAccessFile.length()
         private set

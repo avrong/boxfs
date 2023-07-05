@@ -15,12 +15,12 @@ class FirstBlockTest {
         @field:TempDir
         lateinit var tempDir: File
 
-        val tempFile: Path by lazy {
+        private val tempFile: Path by lazy {
             val tempFile = tempDir.toPath().resolve("test")
             tempFile.createFile()
         }
 
-        val container: Container by lazy {
+        private val container: Container by lazy {
             val space = Space.fromPath(tempFile)
             Container.fromSpace(space)
         }

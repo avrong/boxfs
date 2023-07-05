@@ -14,12 +14,12 @@ class SpaceTest {
         @field:TempDir
         lateinit var tempDir: File
 
-        val tempFile: Path by lazy {
+        private val tempFile: Path by lazy {
             val tempFile = tempDir.toPath().resolve("test")
             tempFile.createFile()
         }
 
-        val space: Space by lazy {
+        private val space: Space by lazy {
             Space.fromPath(tempFile)
         }
 

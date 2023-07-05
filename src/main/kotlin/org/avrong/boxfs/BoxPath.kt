@@ -6,9 +6,6 @@ import java.nio.file.Path
  * Box internal path representation.
  */
 class BoxPath(val pathList: List<String>) {
-    // TODO: There is probably need to forbid directory names . and .. as they are used in regular filesystems to
-    //  navigate dir tree
-
     init {
         pathList.forEach {
             if (setOf("..", ".").contains(it))

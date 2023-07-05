@@ -3,7 +3,7 @@ package org.avrong.boxfs.block
 import org.avrong.boxfs.container.RangedSpace
 import org.avrong.boxfs.container.Space
 
-abstract class Block(val type: BlockType, protected val rangedSpace: RangedSpace) {
+internal abstract class Block(private val type: BlockType, protected val rangedSpace: RangedSpace) {
     val spaceSize: Int
         get() = rangedSpace.rangeSize
 
@@ -26,7 +26,7 @@ abstract class Block(val type: BlockType, protected val rangedSpace: RangedSpace
     }
 
     companion object {
-        const val BLOCK_TYPE_SIZE: Int = Byte.SIZE_BYTES
+        private const val BLOCK_TYPE_SIZE: Int = Byte.SIZE_BYTES
         const val BLOCK_TYPE_OFFSET: Int = 0
 
         const val BLOCK_SIZE_SIZE: Int = Int.SIZE_BYTES
