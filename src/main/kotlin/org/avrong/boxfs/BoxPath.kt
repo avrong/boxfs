@@ -6,6 +6,13 @@ class BoxPath(val pathList: List<String>) {
     // TODO: There is probably need to forbid directory names . and .. as they are used in regular filesystems to
     //  navigate dir tree
 
+    init {
+        pathList.forEach {
+            if (setOf("..", ".").contains(it))
+                throw java.lang.IllegalArgumentException("Dir cannon be named .. or .")
+        }
+    }
+
     val depth: Int
         get() = pathList.size
 
@@ -22,7 +29,7 @@ class BoxPath(val pathList: List<String>) {
     }
 
     fun with(dirName: String): BoxPath {
-        assert(!dirName.contains("/")) { "Dir name cannot contain slashes"}
+        if (dirName.contains("/")) throw IllegalArgumentException("Dir name cannot contain /")
         return BoxPath(pathList + listOf(dirName))
     }
 
