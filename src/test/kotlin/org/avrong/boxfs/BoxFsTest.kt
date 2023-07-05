@@ -297,7 +297,7 @@ class BoxFsTest {
     @Test
     fun testPopulation() {
         val boxFs = BoxFs.create(tempDir.resolve("population"))
-        val localPath = File(BoxFsTest::class.java.getResource("/test/bands/")!!.file).toPath() // Windows-compatible
+        val localPath = getResource("/test/bands")
         boxFs.populate(localPath, BoxPath("/"))
         assertTrue(boxFs.exists("/rock".toBoxPath()))
         assertTrue(boxFs.exists("/rock/punk/paramore.txt".toBoxPath()))
@@ -310,7 +310,7 @@ class BoxFsTest {
     @Test
     fun testPopulationAndTreeVisitor() {
         val boxFs = BoxFs.create(tempDir.resolve("population_tree"))
-        val testResourcesPath = File(BoxFsTest::class.java.getResource("/test/")!!.file).toPath() // Windows-compatible
+        val testResourcesPath = getResource("/test")
         val localPath = testResourcesPath.resolve("bands/")
         val expectedTree = testResourcesPath.resolve("bands-tree.txt").readText()
 
@@ -330,7 +330,7 @@ class BoxFsTest {
         outputPath.createDirectory()
 
         // Populate into container
-        val testBandsPath = File(BoxFsTest::class.java.getResource("/test/bands")!!.file).toPath() // Windows-compatible
+        val testBandsPath = getResource("/test/bands")
         boxFs.populate(testBandsPath, "/".toBoxPath())
 
         // Materialize it back
@@ -346,7 +346,7 @@ class BoxFsTest {
     @Test
     fun testCompaction() {
         val boxFs = BoxFs.create(tempDir.resolve("compaction"))
-        val localPath = File(BoxFsTest::class.java.getResource("/test/bands/")!!.file).toPath() // Windows-compatible
+        val localPath = getResource("/test/bands")
 
         val rootPath = BoxPath("/")
         boxFs.populate(localPath, rootPath)
@@ -364,4 +364,9 @@ class BoxFsTest {
 
         assertEquals(expectedTree, boxFs.getVisualTree(rootPath))
     }
+
+    /**
+     * Get resource (with Windows path workaround)
+     */
+    fun getResource(path: String) = File(BoxFsTest::class.java.getResource(path)!!.file).toPath()
 }
