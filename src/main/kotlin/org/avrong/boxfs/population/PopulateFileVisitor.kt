@@ -3,10 +3,12 @@ package org.avrong.boxfs.population
 import org.avrong.boxfs.BoxFs
 import org.avrong.boxfs.BoxPath
 import org.avrong.boxfs.toBoxPath
+import java.io.IOException
 import java.nio.file.FileVisitResult
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
+import kotlin.io.path.pathString
 import kotlin.io.path.readBytes
 
 class PopulateFileVisitor(val boxFs: BoxFs, val prefix: Path, val internalPath: BoxPath) : SimpleFileVisitor<Path>() {
@@ -14,7 +16,15 @@ class PopulateFileVisitor(val boxFs: BoxFs, val prefix: Path, val internalPath: 
         val convertedPath = convertPath(file)
 
         boxFs.createFile(convertedPath)
-        boxFs.writeFile(convertedPath, file.readBytes())
+
+        try {
+            val bytes = file.readBytes()
+            boxFs.writeFile(convertedPath, bytes)
+        } catch (e: IOException) {
+            println("Can't populate file ${file.pathString}")
+            println(e)
+        }
+
 
         return super.visitFile(file, attrs)
     }
