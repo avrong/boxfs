@@ -1,7 +1,7 @@
 package org.avrong.boxfs
 
+import org.avrong.boxfs.visitor.AbstractBoxFsVisitor
 import org.avrong.boxfs.visitor.BoxFsVisitResult
-import org.avrong.boxfs.visitor.BoxFsVisitor
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -78,19 +78,10 @@ class FunctionalTest {
         }
     }
 
-    class FileCollector : BoxFsVisitor {
+    class FileCollector : AbstractBoxFsVisitor() {
         val allFiles = mutableListOf<BoxPath>()
-
-        override fun preVisitDirectory(dir: BoxPath): BoxFsVisitResult {
-            return BoxFsVisitResult.CONTINUE
-        }
-
         override fun visitFile(file: BoxPath): BoxFsVisitResult {
             allFiles.add(file)
-            return BoxFsVisitResult.CONTINUE
-        }
-
-        override fun postVisitDirectory(dir: BoxPath): BoxFsVisitResult {
             return BoxFsVisitResult.CONTINUE
         }
     }
