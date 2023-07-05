@@ -19,8 +19,8 @@ interface Box {
 
     // Files only
     fun createFile(path: BoxPath): Boolean
-    fun writeFile(path: BoxPath, bytes: ByteArray): Boolean
-    fun appendFile(path: BoxPath, bytes: ByteArray): Boolean
+    fun writeFile(path: BoxPath, byteArray: ByteArray): Boolean
+    fun appendFile(path: BoxPath, byteArray: ByteArray): Boolean
     // fun copyFile(pathFrom: BoxPath, pathTo: BoxPath): Boolean
     fun readFile(path: BoxPath): ByteArray?
     fun getFileSize(path: BoxPath): Int?
