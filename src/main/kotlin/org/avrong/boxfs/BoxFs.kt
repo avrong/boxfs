@@ -7,10 +7,7 @@ import org.avrong.boxfs.block.SymbolBlock
 import org.avrong.boxfs.container.Container
 import org.avrong.boxfs.container.Space
 import org.avrong.boxfs.population.PopulateFileVisitor
-import org.avrong.boxfs.visitor.BasicCompactionVisitor
-import org.avrong.boxfs.visitor.BoxFsVisitor
-import org.avrong.boxfs.visitor.MaterializeVisitor
-import org.avrong.boxfs.visitor.VisualTreeVisitor
+import org.avrong.boxfs.visitor.*
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
@@ -353,11 +350,20 @@ class BoxFs private constructor(
             val blockType = container.getBlockType(valueOffset)
 
             if (blockType == BlockType.DIRECTORY) {
-                visitor.preVisitDirectory(path)
-                recursiveDirectoryVisitor(path, visitor)
-                visitor.postVisitDirectory(path)
+                val preVisitResult = visitor.preVisitDirectory(path)
+                if (preVisitResult == BoxFsVisitResult.SKIP_SIBLINGS) return
+                if (preVisitResult == BoxFsVisitResult.TERMINATE) return
+
+                if (preVisitResult != BoxFsVisitResult.SKIP_SUBTREE) {
+                    recursiveDirectoryVisitor(path, visitor)
+                }
+
+                val postVisitResult = visitor.postVisitDirectory(path)
+                if (postVisitResult == BoxFsVisitResult.TERMINATE) return
+                if (postVisitResult == BoxFsVisitResult.SKIP_SIBLINGS) return
             } else if (blockType == BlockType.FILE) {
-                visitor.visitFile(path)
+                val visitFileResult = visitor.visitFile(path)
+                if (visitFileResult != BoxFsVisitResult.CONTINUE) return
             }
         }
     }

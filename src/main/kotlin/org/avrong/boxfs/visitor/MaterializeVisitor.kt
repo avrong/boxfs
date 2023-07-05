@@ -7,7 +7,7 @@ import kotlin.io.path.createDirectory
 import kotlin.io.path.createFile
 import kotlin.io.path.writeBytes
 
-class MaterializeVisitor(private val boxFs: BoxFs, private val targetDir: Path) : BoxFsVisitor {
+class MaterializeVisitor(private val boxFs: BoxFs, private val targetDir: Path) : AbstractBoxFsVisitor() {
     override fun preVisitDirectory(dir: BoxPath): BoxFsVisitResult {
         targetDir.resolve(dir.toPath()).createDirectory()
         return BoxFsVisitResult.CONTINUE
@@ -20,10 +20,6 @@ class MaterializeVisitor(private val boxFs: BoxFs, private val targetDir: Path) 
         externalPath.createFile()
         externalPath.writeBytes(content)
 
-        return BoxFsVisitResult.CONTINUE
-    }
-
-    override fun postVisitDirectory(dir: BoxPath): BoxFsVisitResult {
         return BoxFsVisitResult.CONTINUE
     }
 }
