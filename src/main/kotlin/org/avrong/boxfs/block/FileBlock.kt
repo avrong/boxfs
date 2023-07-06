@@ -49,8 +49,8 @@ internal class FileBlock(rangedSpace: RangedSpace) : Block(BlockType.FILE, range
 
         const val MIN_INITIAL_BLOCK_CONTENT_SIZE: Int = 64
 
-        fun getInitialBlockDataSize(content: ByteArray): Int {
-            return NEXT_BLOCK_SIZE + CONTENT_SIZE_SIZE + max(content.size, MIN_INITIAL_BLOCK_CONTENT_SIZE)
+        fun getInitialBlockDataSize(contentSize: Int): Int {
+            return NEXT_BLOCK_SIZE + CONTENT_SIZE_SIZE + max(contentSize, MIN_INITIAL_BLOCK_CONTENT_SIZE)
         }
 
         fun getAdditionalBlockDataSize(contentSize: Int, previousBlockSize: Int): Int {

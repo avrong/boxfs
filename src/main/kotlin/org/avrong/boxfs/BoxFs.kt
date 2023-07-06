@@ -82,7 +82,13 @@ class BoxFs private constructor(
      * Creates an empty file in `path`. Returns `true` if succeeded, and `false` if either `path` does not exist,
      * or there is already an entry with such name.
      */
-    override fun createFile(path: BoxPath): Boolean {
+    override fun createFile(path: BoxPath): Boolean = createFile(path, 0)
+
+    /**
+     * Creates an empty file with a block size of `contentSize`.
+     * Returns `true` if succeeded, and `false` if either path does not exist, or there is already an entry with such name.
+     */
+    fun createFile(path: BoxPath, contentSize: Int): Boolean {
         val directoryPath = path.withoutLast()
         val fileName = path.last()
         val directoryBlock = getDirectoryBlockByPath(directoryPath) ?: return false
@@ -96,7 +102,7 @@ class BoxFs private constructor(
 
         val symbolBlock = container.createSymbolBlock(SymbolBlock.getBlockDataSize(fileName))
         symbolBlock.string = fileName
-        val fileBlock = container.createFileBlock(FileBlock.getInitialBlockDataSize(ByteArray(0)))
+        val fileBlock = container.createFileBlock(FileBlock.getInitialBlockDataSize(contentSize))
         val directoryEntry = DirectoryBlock.DirectoryBlockEntry(symbolBlock.offset, fileBlock.offset)
         val availableDirectoryBlock = findAvailableDirectoryBlock(directoryBlock)
         availableDirectoryBlock.appendEntry(directoryEntry)
@@ -333,7 +339,7 @@ class BoxFs private constructor(
             return true
         } else if (isFile(pathFrom)) {
             val bytes = readFile(pathFrom)!!
-            createFile(pathTo)
+            createFile(pathTo, bytes.size)
             return writeFile(pathTo, bytes)
         }
 

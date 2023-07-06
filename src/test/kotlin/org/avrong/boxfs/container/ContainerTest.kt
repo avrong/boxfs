@@ -85,7 +85,7 @@ class ContainerTest {
     @Test
     fun testFileBlock() {
         val content = "hello".toByteArray()
-        val blockDataSize = FileBlock.getInitialBlockDataSize(content)
+        val blockDataSize = FileBlock.getInitialBlockDataSize(content.size)
         val fileBlock = container.createFileBlock(blockDataSize)
         fileBlock.appendContent(content)
 

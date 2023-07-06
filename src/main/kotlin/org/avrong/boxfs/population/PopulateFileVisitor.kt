@@ -15,10 +15,10 @@ internal class PopulateFileVisitor(private val boxFs: BoxFs, private val prefix:
     override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
         val convertedPath = convertPath(file)
 
-        boxFs.createFile(convertedPath)
 
         try {
             val bytes = file.readBytes()
+            boxFs.createFile(convertedPath, bytes.size)
             boxFs.writeFile(convertedPath, bytes)
         } catch (e: IOException) {
             println("Can't populate file ${file.pathString}")

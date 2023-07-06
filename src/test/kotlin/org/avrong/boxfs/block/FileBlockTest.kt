@@ -58,7 +58,7 @@ class FileBlockTest {
     @Test
     fun testAppendContent() {
         val content = listOf<Byte>(1, 2, 3, 4).toByteArray()
-        val fileBlock = container.createFileBlock(FileBlock.getInitialBlockDataSize(content))
+        val fileBlock = container.createFileBlock(FileBlock.getInitialBlockDataSize(content.size))
         fileBlock.appendContent(content.sliceArray(0..1))
         fileBlock.appendContent(content.sliceArray(2..3))
 
@@ -68,7 +68,7 @@ class FileBlockTest {
 
     @Test
     fun testInitialMinimalBlockDataSize() {
-        val initialMinDataSize = FileBlock.getInitialBlockDataSize(ByteArray(0))
+        val initialMinDataSize = FileBlock.getInitialBlockDataSize(0)
         assertEquals(
             FileBlock.NEXT_BLOCK_SIZE + FileBlock.CONTENT_SIZE_SIZE + FileBlock.MIN_INITIAL_BLOCK_CONTENT_SIZE,
             initialMinDataSize
@@ -78,7 +78,7 @@ class FileBlockTest {
     @Test
     fun testInitialContentBlockDataSize() {
         val content = ByteArray(100)
-        val initialContentDataSize = FileBlock.getInitialBlockDataSize(content)
+        val initialContentDataSize = FileBlock.getInitialBlockDataSize(content.size)
         assertEquals(
             FileBlock.NEXT_BLOCK_SIZE + FileBlock.CONTENT_SIZE_SIZE +
                     content.size,
